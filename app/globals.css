@@ -2,25 +2,84 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1A1A1A;
+  --primary: #6B4E71;
+  --primary-dark: #4A364F;
+  --accent-gold: #D4AF37;
+  --cream: #FDFBF7;
+  --custom-footer: #2D1B2E;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-accent-gold: var(--accent-gold);
+  --color-cream: var(--cream);
+  --color-charcoal: var(--foreground);
+  --color-custom-footer: var(--custom-footer);
+  
+  --font-display: "Noto Serif", serif;
+  --font-sans: "Noto Sans", sans-serif;
+  
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer utilities {
+  .hero-gradient {
+    background: linear-gradient(to right, rgba(0,0,0,0.55), transparent);
+  }
+  
+  .soft-purple-wash {
+    background: radial-gradient(circle at center, rgba(107, 78, 113, 0.04) 0%, transparent 70%);
+  }
+  
+  .purple-gradient-bg {
+    background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(107, 78, 113, 0.03) 50%, rgba(255,255,255,0) 100%);
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  }
+  
+  .asymmetric-mosaic {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: minmax(150px, auto);
+    gap: 12px;
+  }
+  
+  .curved-carousel-container {
+    perspective: 2000px;
+    padding: 4rem 0;
+    overflow: hidden;
+  }
+  
+  .curved-arc {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    transform-style: preserve-3d;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
   }
 }
+
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
+
