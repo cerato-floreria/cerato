@@ -4,18 +4,16 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <footer className="border-t border-accent-gold/20 bg-custom-footer py-24 text-white/70">
+    <footer className="bg-primary py-24 text-white/70">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-20">
         <div className="grid grid-cols-1 gap-16 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="flex flex-col gap-8">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-accent-gold/30 bg-primary/20 p-1.5">
-                <img
-                  alt="Logo"
-                  className="h-full w-full object-contain brightness-0 invert"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKPT4EK2cckQliURSb_6HI3O2K8kRkUoNgMdeaJY20_8pP59ELiDBwdBCHHisPuBdU786EHTBEKqFN8D4YckfTGptb5nRF5HaVFeT2PaWvZanwChcp7MG7ENVQ8RHclSHF8IYGW8LQKo2KgsUlHQkWhPqNWyTtET8oQU6ABXzKn5JprQt4LxNMaLILbBybEyonG77QjcNtQzQBavy4UwTqud__YZgYbmjKEFI1OfDNUoz6BOMnFm2goDBNA_tCM6J61ZK0V7UCYg"
-                />
+            <div className="flex items-center gap-4 group/logo">
+              <div className="text-white transition-transform duration-300 group-hover/logo:scale-110">
+                <svg className="w-8 h-8 lg:w-9 lg:h-9" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
+                </svg>
               </div>
               <h2 className="font-display text-2xl font-bold uppercase tracking-[0.2em] text-white">
                 Cerato
@@ -78,9 +76,9 @@ const Footer = () => {
         </div>
 
         {/* Bottom Banner */}
-        <div className="mt-24 border-t border-white/5 pt-10 text-center text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">
+        <div className="mt-12 border-t border-white/5 pt-6 text-center text-[10px] font-bold uppercase tracking-[0.3em] text-white/30">
           © 2024 Cerato Arte Floral. Todos los derechos reservados.
-          <div className="mt-2 tracking-[0.2em]">Desarrollado por Blackherry</div>
+          <div className="mt-2 tracking-[0.2em]">Desarrollado por BlackCherry IT Consulting</div>
         </div>
       </div>
     </footer>

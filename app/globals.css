@@ -1,22 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #1A1A1A;
-  --primary: #6B4E71;
-  --primary-dark: #4A364F;
+  --background: #f7f6f7; /* background-light */
+  --foreground: #2D1B2E; /* primary */
+  --primary: #2D1B2E;
+  --accent: #6B4E71; /* brand-accent */
+  --background-dark: #1b161c;
   --accent-gold: #D4AF37;
   --cream: #FDFBF7;
-  --custom-footer: #2D1B2E;
 }
 
 @theme {
   --color-primary: var(--primary);
-  --color-primary-dark: var(--primary-dark);
+  --color-accent: var(--accent);
+  --color-background-light: var(--background);
+  --color-background-dark: var(--background-dark);
   --color-accent-gold: var(--accent-gold);
   --color-cream: var(--cream);
   --color-charcoal: var(--foreground);
-  --color-custom-footer: var(--custom-footer);
   
   --font-display: "Noto Serif", serif;
   --font-sans: "Noto Sans", sans-serif;
@@ -75,7 +76,14 @@
     background: var(--primary);
     border-radius: 10px;
   }
+
+  .product-card-overlay {
+    background: linear-gradient(to top, rgba(45, 27, 46, 0.85) 0%, rgba(45, 27, 46, 0.3) 60%, rgba(45, 27, 46, 0) 100%);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
 }
+
 
 
 body {

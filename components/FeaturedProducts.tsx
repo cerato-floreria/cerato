@@ -118,6 +118,7 @@ const FeaturedProducts = () => {
                   <p className="text-xl font-bold text-accent-gold">
                     {product.price}
                   </p>
+
                 </div>
 
               </div>
@@ -135,7 +136,7 @@ const FeaturedProducts = () => {
 
         {/* Bottom CTA */}
         <div className="mt-20 flex justify-center">
-          <button className="group flex items-center gap-4 rounded-full bg-primary-dark/80 px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-xl transition-all hover:bg-primary-dark hover:-translate-y-1">
+          <button className="group flex items-center gap-4 rounded-full bg-primary px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-xl transition-all hover:opacity-90 hover:-translate-y-1">
             VER REGALOS Y MÁS
             <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">arrow_forward</span>
           </button>
