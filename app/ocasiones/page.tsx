@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import OccasionFilters from "@/components/OccasionFilters";
 import ProductSection from "@/components/ProductSection";
 
 import { allProducts as productsData } from "@/data/products";
 
-const OcasionesCatalog = () => {
+const OcasionesCatalogContent = () => {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
 
@@ -95,6 +95,18 @@ const OcasionesCatalog = () => {
 
       </div>
     </main>
+  );
+};
+
+const OcasionesCatalog = () => {
+  return (
+    <Suspense fallback={
+      <div className="flex-1 pt-32 lg:pt-48 pb-24 bg-background-light text-center">
+        <p className="font-display text-2xl italic text-primary/60">Cargando productos...</p>
+      </div>
+    }>
+      <OcasionesCatalogContent />
+    </Suspense>
   );
 };
 

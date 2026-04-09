@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductFilters from "@/components/ProductFilters";
 import ProductSection from "@/components/ProductSection";
 import { allProducts as productsData } from "@/data/products";
 
-const FloresCatalog = () => {
+const FloresCatalogContent = () => {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
 
@@ -23,12 +23,9 @@ const FloresCatalog = () => {
   }, [categoryParam]);
 
 
-  // Unified Product Data with Categories normalized
+  // Unified Product Data
   const allProducts = useMemo(() => {
-    return productsData.map(p => ({
-      ...p,
-      price: typeof p.price === 'string' ? parseFloat(p.price.replace(/[^0-9.]/g, "")) : p.price
-    }));
+    return productsData;
   }, []);
 
 
@@ -37,7 +34,7 @@ const FloresCatalog = () => {
     return allProducts.filter((product) => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === "" || product.category === selectedCategory;
-      const matchesPrice = (product.price as number) <= maxPrice;
+      const matchesPrice = product.price <= maxPrice;
       return matchesSearch && matchesCategory && matchesPrice;
     });
   }, [allProducts, searchQuery, selectedCategory, maxPrice]);
@@ -91,6 +88,18 @@ const FloresCatalog = () => {
 
       </div>
     </main>
+  );
+};
+
+const FloresCatalog = () => {
+  return (
+    <Suspense fallback={
+      <div className="flex-1 pt-32 lg:pt-48 pb-24 bg-background-light text-center">
+        <p className="font-display text-2xl italic text-primary/60">Cargando catálogo...</p>
+      </div>
+    }>
+      <FloresCatalogContent />
+    </Suspense>
   );
 };
 
