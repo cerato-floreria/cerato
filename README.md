@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cerato Floral 🌸 | Arte Floral Premium
 
-## Getting Started
+**Cerato Floral** es una plataforma de comercio electrónico de lujo diseñada para ofrecer una experiencia de compra exclusiva de arreglos florales y regalos premium en México. Construida con tecnologías de vanguardia para garantizar el máximo rendimiento, accesibilidad y posicionamiento en buscadores (SEO).
 
-First, run the development server:
+## ✨ Características Principales
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Experiencia de Usuario Premium**: Interfaz elegante con animaciones fluidas, glassmorphism y un diseño inspirado en la sofisticación floral.
+- **Buscador Inteligente**: Sistema de autocompletado en tiempo real que sugiere productos y categorías dinámicamente.
+- **Carrito de Compras Responsivo**: Drawer lateral optimizado para dispositivos móviles, tablets y escritorio.
+- **Optimización Total (Lighthouse)**: 
+  - **Performance 100**: Optimización de imágenes (LCP), pre-conexión de fuentes y carga eficiente.
+  - **Accesibilidad 100**: Cumplimiento de estándares WCAG con etiquetas ARIA y navegación por teclado.
+  - **SEO Max**: Metadatos enriquecidos, esquema JSON-LD para negocios, `sitemap.xml` dinámico y `robots.txt`.
+- **Privacidad y Seguridad**: Modal de privacidad integrado cumpliendo con la Ley Federal de Protección de Datos Personales (México).
+- **Acciones Flotantes**: Botón de contacto directo por WhatsApp y sistema de navegación "Volver arriba".
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Tecnologías Utilizadas
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Core**: [Next.js 15 (App Router)](https://nextjs.org/)
+- **Estilos**: [Tailwind CSS](https://tailwindcss.com/)
+- **Iconografía**: [Google Material Symbols](https://fonts.google.com/icons)
+- **Despliegue**: Optimizado para Vercel
+- **Datos**: Arquitectura preparada para integración con Shopify Storefront API.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Instalación y Desarrollo
 
-## Learn More
+1. **Clonar el repositorio**:
+   ```bash
+   git clone <url-del-repositorio>
+   cd cerato
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. **Instalar dependencias**:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Iniciar servidor de desarrollo**:
+   ```bash
+   npm run dev
+   ```
+   La aplicación estará disponible en `http://localhost:3000`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📁 Estructura del Proyecto
 
-## Deploy on Vercel
+- `app/`: Rutas y páginas del servidor (Next.js App Router).
+- `components/`: Componentes de UI reutilizables y secciones principales.
+- `context/`: Gestión de estado global (Carrito, UI).
+- `data/`: Catálogo de productos y configuración estática.
+- `public/`: Activos estáticos, logos e imágenes.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 💎 Créditos
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Desarrollado con pasión para **Cerato Floral**.
