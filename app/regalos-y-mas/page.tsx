@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { GiftFilters } from "@/components/CatalogFilters";
 import ProductSection from "@/components/ProductSection";
 
 import { allProducts as productsData } from "@/data/products";
 
-const RegalosCatalog = () => {
+const RegalosCatalogContent = () => {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
 
@@ -86,6 +86,18 @@ const RegalosCatalog = () => {
         )}
       </div>
     </main>
+  );
+};
+
+const RegalosCatalog = () => {
+  return (
+    <Suspense fallback={
+      <div className="flex-1 pt-32 lg:pt-48 pb-24 bg-background-light text-center">
+        <p className="font-display text-2xl italic text-primary/60">Cargando detalles...</p>
+      </div>
+    }>
+      <RegalosCatalogContent />
+    </Suspense>
   );
 };
 

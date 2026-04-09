@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { EventFilters } from "@/components/CatalogFilters";
 import ProductSection from "@/components/ProductSection";
 
 import { allProducts as productsData } from "@/data/products";
 
-const EventosCatalog = () => {
+const EventosCatalogContent = () => {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
 
@@ -86,6 +86,20 @@ const EventosCatalog = () => {
         )}
       </div>
     </main>
+  );
+};
+
+const EventosCatalog = () => {
+  return (
+    <Suspense fallback={
+      <div className="flex-1 pt-32 lg:pt-48 pb-24 bg-background-light">
+        <div className="mx-auto max-w-[1536px] px-6 lg:px-12 text-center">
+          <p className="font-display text-2xl italic text-primary/60">Cargando catálogo...</p>
+        </div>
+      </div>
+    }>
+      <EventosCatalogContent />
+    </Suspense>
   );
 };
 
