@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import React, { useState } from "react";
 
 const products = [
   { 
@@ -46,100 +48,114 @@ const FeaturedProducts = () => {
     setCurrentIndex((prev) => (prev - 1 + products.length) % products.length);
   };
 
-  // Auto-play
-  useEffect(() => {
-    const timer = setInterval(nextSlide, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const getVisibleProducts = () => {
-    const visible = [];
-    for (let i = -1; i <= 1; i++) {
-      const index = (currentIndex + i + products.length) % products.length;
-      visible.push({ ...products[index], position: i });
-    }
-    return visible;
+  const getPosition = (index: number) => {
+    let diff = index - currentIndex;
+    
+    // Handle wrap-around for a circular carousel feel
+    if (diff > Math.floor(products.length / 2)) diff -= products.length;
+    if (diff < -Math.floor(products.length / 2)) diff += products.length;
+    
+    return diff;
   };
 
   return (
-    <section className="relative py-32 bg-white overflow-hidden">
-      <div className="mx-auto max-w-[1440px] px-6 lg:px-20 text-center">
+    <section className="relative overflow-hidden bg-white py-16 lg:py-20">
+      <div className="mx-auto max-w-[1440px] px-6 text-center lg:px-20">
         {/* Header Section */}
-        <div className="mb-24 flex flex-col items-center">
+        <div className="mb-6 flex flex-col items-center lg:mb-8">
           <span className="mb-4 text-[10px] font-bold uppercase tracking-[0.4em] text-accent-gold">
             FAVORITOS DE LA TEMPORADA
           </span>
-          <h3 className="font-display mb-6 text-5xl font-medium text-primary">
+          <h3 className="font-display mb-6 text-4xl font-medium text-primary lg:text-[42px]">
             Productos destacados
           </h3>
           <div className="h-[1px] w-32 bg-accent-gold/40"></div>
         </div>
+        
         {/* Carousel Container */}
-        <div className="relative flex items-center justify-center perspective-1000 group/carousel">
+        <div className="group/carousel relative flex items-center justify-center perspective-[2000px] min-h-[500px] md:min-h-[650px]">
           {/* Nav Buttons */}
           <button 
             onClick={prevSlide}
-            className="absolute left-4 lg:left-0 z-30 h-14 w-14 rounded-full bg-white/20 backdrop-blur-md border border-white/30 shadow-xl flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300 text-primary-dark opacity-0 group-hover/carousel:opacity-100"
+            className="absolute left-4 z-40 flex h-12 w-12 items-center justify-center rounded-xl bg-white/40 shadow-xl backdrop-blur-md transition-all hover:bg-primary hover:text-white md:h-14 md:w-14"
+            aria-label="Ver producto anterior en el carrusel"
           >
-            <span className="material-symbols-outlined text-3xl">chevron_left</span>
+
+            <span className="material-symbols-outlined text-2xl lg:text-3xl">chevron_left</span>
           </button>
           
-          <div className="flex items-center justify-center gap-4 lg:gap-10 min-h-[600px] w-full max-w-7xl overflow-visible">
-            {getVisibleProducts().map((product, idx) => (
-              <div 
-                key={`${currentIndex}-${idx}`} 
-                className={`flex flex-col items-center transition-all duration-1000 ease-in-out w-full lg:w-[380px] shrink-0 ${
-                  product.position === 0 
-                  ? 'scale-110 z-20 translate-y-0 opacity-100 translate-z-[100px] rotate-y-0' 
-                  : product.position === -1
-                  ? 'scale-[0.82] opacity-50 translate-y-12 rotate-y-[25deg] translate-x-8'
-                  : 'scale-[0.82] opacity-50 translate-y-12 -rotate-y-[25deg] -translate-x-8'
-                }`}
-                style={{ transformStyle: 'preserve-3d' }}
-              >
-                <div className={`relative mb-10 w-full aspect-square overflow-hidden rounded-[12px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-700 ${product.position === 0 ? 'border border-accent-gold/40' : ''}`}>
-                  <div 
-                    className="h-full w-full bg-cover bg-center" 
-                    style={{ backgroundImage: `url(${product.image})` }}
-                  ></div>
-                  {product.isPopular && product.position === 0 && (
-                    <div className="absolute bottom-6 left-6">
-                      <span className="rounded-full bg-primary/60 backdrop-blur-md px-5 py-2.5 text-[8px] font-bold uppercase tracking-widest text-white shadow-lg border border-white/10">
-                        MÁS POPULAR
-                      </span>
-                    </div>
-                  )}
+          <div className="relative flex w-full max-w-5xl items-center justify-center overflow-visible">
+            {products.map((product, index) => {
+              const pos = getPosition(index);
+              const isActive = pos === 0;
+              const isVisible = Math.abs(pos) <= 1;
+
+              return (
+                <div 
+                  key={product.name} 
+                  className={`absolute flex shrink-0 flex-col items-center transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  }`}
+                  style={{
+                    transform: `
+                      translateX(${pos * 105}%) 
+                      scale(${isActive ? 1.1 : 0.85}) 
+                      rotateY(${pos * -20}deg)
+                      translateZ(${isActive ? 100 : 0}px)
+                    `,
+                    zIndex: isActive ? 30 : 20 - Math.abs(pos),
+                    width: '320px'
+                  }}
+                >
+                  <div className={`relative mb-8 w-full aspect-square overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-700 md:mb-10 ${isActive ? 'border border-accent-gold/40' : ''}`}>
+                    <Image 
+                      src={product.image} 
+                      alt={product.name}
+                      fill
+                      className="h-full w-full object-cover"
+                      sizes="320px"
+                    />
+                    {product.isPopular && isActive && (
+                      <div className="absolute bottom-6 left-6">
+                        <span className="rounded-xl bg-primary/60 border border-white/10 px-4 py-2 text-[8px] font-bold uppercase tracking-widest text-white shadow-lg backdrop-blur-md md:px-5 md:py-2.5">
+                          MÁS POPULAR
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className={`flex flex-col items-center gap-2 transition-all duration-700 md:gap-4 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                    <h4 className="font-display text-lg font-medium tracking-tight text-primary md:text-xl">
+                      {product.name}
+                    </h4>
+                    <p className="text-lg font-bold text-accent-gold md:text-xl">
+                      {product.price}
+                    </p>
+                  </div>
                 </div>
-                
-                <div className={`flex flex-col items-center gap-4 transition-all duration-700 ${product.position === 0 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                  <h4 className="font-display text-xl text-primary tracking-tight font-medium">
-                    {product.name}
-                  </h4>
-                  <p className="text-xl font-bold text-accent-gold">
-                    {product.price}
-                  </p>
-
-                </div>
-
-              </div>
-            ))}
-
+              );
+            })}
           </div>
 
           <button 
             onClick={nextSlide}
-            className="absolute right-4 lg:right-0 z-30 h-14 w-14 rounded-full bg-white/20 backdrop-blur-md border border-white/30 shadow-xl flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300 text-primary-dark opacity-0 group-hover/carousel:opacity-100"
+            className="absolute right-4 z-40 flex h-12 w-12 items-center justify-center rounded-xl bg-white/40 shadow-xl backdrop-blur-md transition-all hover:bg-primary hover:text-white md:h-14 md:w-14"
+            aria-label="Ver siguiente producto en el carrusel"
           >
-            <span className="material-symbols-outlined text-3xl">chevron_right</span>
+
+            <span className="material-symbols-outlined text-2xl lg:text-3xl">chevron_right</span>
           </button>
         </div>
 
         {/* Bottom CTA */}
-        <div className="mt-20 flex justify-center">
-          <button className="group flex items-center gap-4 rounded-full bg-primary px-12 py-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-xl transition-all hover:opacity-90 hover:-translate-y-1">
+        <div className="mt-6 flex justify-center lg:mt-8">
+          <Link 
+            href="/regalos-y-mas"
+            className="group flex items-center gap-4 rounded-xl bg-primary px-10 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-xl transition-all hover:-translate-y-1 hover:opacity-90 md:px-12 md:py-5"
+          >
             VER REGALOS Y MÁS
             <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">arrow_forward</span>
-          </button>
+          </Link>
         </div>
       </div>
     </section>
@@ -147,4 +163,3 @@ const FeaturedProducts = () => {
 };
 
 export default FeaturedProducts;
-

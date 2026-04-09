@@ -21,8 +21,27 @@ const ProductFilters: React.FC<FilterProps> = ({
   onPrice, 
   onClear 
 }) => {
+  const [showFilters, setShowFilters] = React.useState(false);
+
   return (
-    <div className="mb-12 rounded-2xl bg-cream border border-primary/10 p-6 lg:p-10 shadow-sm relative overflow-hidden">
+    <div className="mb-12 relative">
+      {/* Mobile Toggle Bar */}
+      <button 
+        onClick={() => setShowFilters(!showFilters)}
+        className="w-full flex items-center justify-between lg:hidden bg-primary px-6 py-4 rounded-xl shadow-lg border border-white/5 active:scale-95 transition-all"
+      >
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-white/50">{showFilters ? "close" : "tune"}</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white">
+            {showFilters ? "OCULTAR FILTROS" : "MOSTRAR FILTROS"}
+          </span>
+        </div>
+        <span className={`material-symbols-outlined text-white/50 transition-transform duration-300 ${showFilters ? "rotate-180" : ""}`}>expand_more</span>
+      </button>
+
+      {/* Filter Content */}
+      <div className={`mt-4 lg:mt-0 lg:block ${showFilters ? "block" : "hidden"}`}>
+        <div className="rounded-2xl bg-cream border border-primary/10 p-6 lg:p-10 shadow-sm relative overflow-hidden">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-end">
         
         {/* Search Field */}
@@ -91,6 +110,8 @@ const ProductFilters: React.FC<FilterProps> = ({
           </button>
         </div>
 
+      </div>
+        </div>
       </div>
     </div>
   );

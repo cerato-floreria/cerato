@@ -1,4 +1,4 @@
-import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 interface ProductCardProps {
@@ -12,13 +12,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, name, price, image }) => 
   return (
     <Link 
       href={`/productos/${id}`}
-      className="group relative block aspect-[4/5] overflow-hidden rounded-[32px] bg-cream shadow-2xl border border-primary/5 transition-all duration-500 hover:shadow-primary/10 hover:-translate-y-2 active:scale-[0.98]"
+      className="group relative block aspect-[4/5] overflow-hidden rounded-xl bg-cream border border-primary/5 shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-primary/10 active:scale-[0.98]"
     >
-      {/* Background Image with Zoom Effect */}
-      <img
-        alt={name}
-        className="h-full w-full object-cover transition-transform duration-1000 cubic-bezier(0.4, 0, 0.2, 1) group-hover:scale-110"
+      {/* Background Image with Zoom Effect optimized with next/image */}
+      <Image
         src={image}
+        alt={name}
+        fill
+        className="object-cover transition-transform duration-1000 group-hover:scale-110"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
       />
       
       {/* Information Overlay with Add to Cart Button */}
@@ -32,7 +34,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, name, price, image }) => 
           </span>
         </div>
 
-        <button className="w-full rounded-2xl bg-primary py-4 text-[10px] font-bold uppercase tracking-[0.25em] text-white transition-all hover:bg-primary-dark shadow-xl backdrop-blur-sm">
+        <button className="w-full rounded-xl bg-primary py-4 text-[10px] font-bold uppercase tracking-[0.25em] text-white transition-all hover:bg-primary-dark shadow-xl backdrop-blur-sm">
           Ver Detalles
         </button>
       </div>

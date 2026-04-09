@@ -21,8 +21,27 @@ const OccasionFilters: React.FC<FilterProps> = ({
   onPrice, 
   onClear 
 }) => {
+  const [showFilters, setShowFilters] = React.useState(false);
+
   return (
-    <div className="mb-12 rounded-3xl bg-cream/30 border border-primary/5 p-6 lg:p-8 shadow-sm backdrop-blur-sm">
+    <div className="mb-12 relative">
+      {/* Mobile Toggle Bar */}
+      <button 
+        onClick={() => setShowFilters(!showFilters)}
+        className="w-full flex items-center justify-between lg:hidden bg-primary px-6 py-4 rounded-xl shadow-lg border border-white/5 active:scale-95 transition-all"
+      >
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-white/50">{showFilters ? "close" : "tune"}</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white">
+            {showFilters ? "OCULTAR FILTROS" : "MOSTRAR FILTROS"}
+          </span>
+        </div>
+        <span className={`material-symbols-outlined text-white/50 transition-transform duration-300 ${showFilters ? "rotate-180" : ""}`}>expand_more</span>
+      </button>
+
+      {/* Filter Content */}
+      <div className={`mt-4 lg:mt-0 lg:block ${showFilters ? "block" : "hidden"}`}>
+        <div className="rounded-3xl bg-cream/30 border border-primary/5 p-6 lg:p-8 shadow-sm backdrop-blur-sm">
       <div className="flex flex-col lg:flex-row items-end gap-8">
         
         {/* Search Field */}
@@ -90,6 +109,8 @@ const OccasionFilters: React.FC<FilterProps> = ({
           </button>
         </div>
 
+      </div>
+        </div>
       </div>
     </div>
   );
