@@ -46,7 +46,7 @@ const Footer = () => {
           <nav className="flex flex-col gap-6">
             <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent-gold">Nosotros</h5>
             <ul className="flex flex-col gap-3 text-sm font-light">
-              <li><Link className="transition-colors hover:text-white" href="#">Zonas de Entrega</Link></li>
+              <li><Link className="transition-colors hover:text-white" href="/politica-de-envios">Política de Envíos Locales (León, Gto.)</Link></li>
               <li>
                 <button 
                   onClick={() => setIsPrivacyOpen(true)} 

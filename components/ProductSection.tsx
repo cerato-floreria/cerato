@@ -5,8 +5,10 @@ import ProductCard from "./ProductCard";
 
 interface Product {
   id: string;
+  handle?: string;
   name: string;
   price: number;
+  currency?: string;
   image: string;
 }
 
@@ -25,16 +27,18 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products }) => {
         </h3>
         <div className="h-px flex-1 bg-primary/10 ml-8"></div>
       </div>
-      
+
       {/* Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
         {products.map((product, index) => (
           <ProductCard
             key={`${product.id}-${index}`}
             id={product.id}
+            handle={product.handle}
             image={product.image}
             name={product.name}
             price={product.price}
+            currency={product.currency}
           />
         ))}
       </div>
@@ -43,4 +47,3 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products }) => {
 };
 
 export default ProductSection;
-

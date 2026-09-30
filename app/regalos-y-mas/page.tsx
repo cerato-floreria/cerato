@@ -4,41 +4,70 @@ import React, { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { GiftFilters } from "@/components/CatalogFilters";
 import ProductSection from "@/components/ProductSection";
-
-import { allProducts as productsData } from "@/data/products";
+import { getProductsAction } from "@/app/actions/shopify";
+import { buildTaxonomy } from "@/lib/shopify";
+import { ShopifyProduct } from "@/lib/shopify/types";
 
 const RegalosCatalogContent = () => {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
 
+  const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(categoryParam || "");
-  const [maxPrice, setMaxPrice] = useState(3000);
+  const [maxPrice, setMaxPrice] = useState(10000);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Sync state with URL params
   useEffect(() => {
     if (categoryParam !== null) {
       setSelectedCategory(categoryParam);
     }
   }, [categoryParam]);
 
-
-  const allProducts = useMemo(() => {
-    return productsData;
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    getProductsAction().then((data) => {
+      if (isMounted) {
+        setProducts(data);
+        setIsLoading(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  const taxonomy = useMemo(() => buildTaxonomy(products), [products]);
+  const availableCategories = useMemo(() => taxonomy.categories.map((c) => c.name), [taxonomy]);
 
+  const formattedProducts = useMemo(() => {
+    return products.map((p) => ({
+      id: p.id,
+      handle: p.handle,
+      name: p.title,
+      price: p.priceRange?.minVariantPrice?.amount
+        ? parseFloat(p.priceRange.minVariantPrice.amount)
+        : 0,
+      currency: p.priceRange?.minVariantPrice?.currencyCode || "MXN",
+      image:
+        p.featuredImage?.url ||
+        "https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=400",
+      categories: p.categories || ["Regalos y Más"],
+      types: p.types && p.types.length > 0 ? p.types : ["General"]
+    }));
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
-    return allProducts.filter((product) => {
+    return formattedProducts.filter((product) => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === "" || product.category === selectedCategory;
+      const matchesCategory =
+        selectedCategory === "" ||
+        product.categories.some((cat) => cat.toLowerCase() === selectedCategory.toLowerCase());
       const matchesPrice = product.price <= maxPrice;
       return matchesSearch && matchesCategory && matchesPrice;
     });
-  }, [allProducts, searchQuery, selectedCategory, maxPrice]);
-
-  const categories = ["Postres, Chocolates y Botellas", "Globos y Peluches"];
+  }, [formattedProducts, searchQuery, selectedCategory, maxPrice]);
 
   return (
     <main className="flex-1 pt-32 lg:pt-48 pb-24 bg-background-light">
@@ -49,16 +78,16 @@ const RegalosCatalogContent = () => {
             <div className="mt-4 h-1.5 w-24 bg-accent-gold rounded-full"></div>
           </div>
           <div className="flex flex-col items-end gap-2 text-right">
-             <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-primary/40">
-                DETALLES QUE ENAMORAN Y COMPLEMENTOS
-             </span>
-             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/30">
-                {filteredProducts.length} REGALOS
-             </span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-primary/40">
+              DETALLES QUE ENAMORAN Y COMPLEMENTOS
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/30">
+              {filteredProducts.length} REGALOS
+            </span>
           </div>
         </div>
 
-        <GiftFilters 
+        <GiftFilters
           searchQuery={searchQuery}
           selectedCategory={selectedCategory}
           price={maxPrice}
@@ -68,15 +97,24 @@ const RegalosCatalogContent = () => {
           onClear={() => {
             setSearchQuery("");
             setSelectedCategory("");
-            setMaxPrice(3000);
+            setMaxPrice(10000);
           }}
         />
 
-        {filteredProducts.length > 0 ? (
-          categories.map((cat) => {
-            const productsInCat = filteredProducts.filter(p => p.category === cat);
+        {isLoading ? (
+          <div className="py-24 text-center">
+            <span className="material-symbols-outlined text-6xl text-primary/30 animate-spin mb-4">
+              autorenew
+            </span>
+            <p className="font-display text-2xl italic text-primary/60">Cargando regalos de Shopify...</p>
+          </div>
+        ) : filteredProducts.length > 0 ? (
+          (availableCategories.length > 0 ? availableCategories : ["Regalos y Detalles"]).map((catName) => {
+            const productsInCat = filteredProducts.filter((p) =>
+              p.categories.some((c) => c.toLowerCase() === catName.toLowerCase())
+            );
             if (productsInCat.length === 0) return null;
-            return <ProductSection key={cat} title={cat} products={productsInCat} />;
+            return <ProductSection key={catName} title={catName} products={productsInCat} />;
           })
         ) : (
           <div className="py-24 text-center">
@@ -91,11 +129,13 @@ const RegalosCatalogContent = () => {
 
 const RegalosCatalog = () => {
   return (
-    <Suspense fallback={
-      <div className="flex-1 pt-32 lg:pt-48 pb-24 bg-background-light text-center">
-        <p className="font-display text-2xl italic text-primary/60">Cargando detalles...</p>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex-1 pt-32 lg:pt-48 pb-24 bg-background-light text-center">
+          <p className="font-display text-2xl italic text-primary/60">Cargando detalles...</p>
+        </div>
+      }
+    >
       <RegalosCatalogContent />
     </Suspense>
   );
