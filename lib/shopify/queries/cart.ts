@@ -36,6 +36,10 @@ export const cartFragment = `
                 amount
                 currencyCode
               }
+              image {
+                url
+                altText
+              }
               product {
                 id
                 handle

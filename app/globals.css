@@ -94,6 +94,23 @@
     background-image: radial-gradient(#2d1b2e08 1px, transparent 1px);
     background-size: 20px 20px;
   }
+
+  @keyframes marquee-banner {
+    0%, 15% {
+      transform: translateX(0%);
+    }
+    50%, 65% {
+      transform: translateX(var(--marquee-distance, -40px));
+    }
+    90%, 100% {
+      transform: translateX(0%);
+    }
+  }
+
+  .animate-marquee-banner {
+    animation: marquee-banner var(--marquee-duration, 4s) ease-in-out infinite;
+    will-change: transform;
+  }
 }
 
 

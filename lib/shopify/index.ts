@@ -251,6 +251,42 @@ export function buildTaxonomy(products: ShopifyProduct[]): TaxonomyData {
 }
 
 /**
+ * Converts category name to clean URL slug:
+ * e.g. "FLORES Y PLANTAS" -> "flores-y-plantas"
+ * e.g. "¿Qué quieres decir?" -> "que-quieres-decir"
+ */
+export function slugifyCategory(categoryName: string): string {
+  if (!categoryName) return '';
+  return categoryName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+}
+
+/**
+ * Converts a string to PascalCase / Title Case:
+ * e.g. "RAMOS Y ATADOS" -> "Ramos Y Atados"
+ * e.g. "10 GERBERAS MULTICOLOR" -> "10 Gerberas Multicolor"
+ * e.g. "incondicional (rojo)" -> "Incondicional (Rojo)"
+ */
+export function toPascalCase(str: string): string {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .split(/([\s-_/()]+)/)
+    .map((word) => {
+      if (!word) return '';
+      if (word === 'xl') return 'XL';
+      if (word === 'xxl') return 'XXL';
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join('');
+}
+
+/**
  * Gets all products from Shopify or fallback mock catalog.
  */
 export async function getAllProducts(): Promise<ShopifyProduct[]> {
@@ -295,11 +331,21 @@ export async function getProductByHandle(
 /**
  * Cart API helpers
  */
-export async function createCart(): Promise<Cart | null> {
-  const res = await shopifyFetch<{ cartCreate: { cart: Cart } }>({
+export async function createCart(
+  lines: Array<{ merchandiseId: string; quantity: number }> = [],
+): Promise<Cart | null> {
+  const res = await shopifyFetch<{
+    cartCreate: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+  }>({
     query: createCartMutation,
+    variables: lines.length > 0 ? { lineItems: lines } : {},
     cache: 'no-store',
   });
+
+  if (res?.body?.cartCreate?.userErrors?.length) {
+    console.error('Shopify createCart userErrors:', res.body.cartCreate.userErrors);
+  }
+
   return res?.body?.cartCreate?.cart || null;
 }
 
@@ -308,7 +354,9 @@ export async function addToCart(
   merchandiseId: string,
   quantity: number = 1,
 ): Promise<Cart | null> {
-  const res = await shopifyFetch<{ cartLinesAdd: { cart: Cart } }>({
+  const res = await shopifyFetch<{
+    cartLinesAdd: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+  }>({
     query: addToCartMutation,
     variables: {
       cartId,
@@ -316,6 +364,12 @@ export async function addToCart(
     },
     cache: 'no-store',
   });
+
+  if (res?.body?.cartLinesAdd?.userErrors?.length) {
+    console.error('Shopify addToCart userErrors:', res.body.cartLinesAdd.userErrors);
+    return null;
+  }
+
   return res?.body?.cartLinesAdd?.cart || null;
 }
 
@@ -324,7 +378,9 @@ export async function updateCartQuantity(
   lineId: string,
   quantity: number,
 ): Promise<Cart | null> {
-  const res = await shopifyFetch<{ cartLinesUpdate: { cart: Cart } }>({
+  const res = await shopifyFetch<{
+    cartLinesUpdate: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+  }>({
     query: updateCartItemMutation,
     variables: {
       cartId,
@@ -332,6 +388,12 @@ export async function updateCartQuantity(
     },
     cache: 'no-store',
   });
+
+  if (res?.body?.cartLinesUpdate?.userErrors?.length) {
+    console.error('Shopify updateCartQuantity userErrors:', res.body.cartLinesUpdate.userErrors);
+    return null;
+  }
+
   return res?.body?.cartLinesUpdate?.cart || null;
 }
 
@@ -339,11 +401,19 @@ export async function removeFromCart(
   cartId: string,
   lineIds: string[],
 ): Promise<Cart | null> {
-  const res = await shopifyFetch<{ cartLinesRemove: { cart: Cart } }>({
+  const res = await shopifyFetch<{
+    cartLinesRemove: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+  }>({
     query: removeFromCartMutation,
     variables: { cartId, lineIds },
     cache: 'no-store',
   });
+
+  if (res?.body?.cartLinesRemove?.userErrors?.length) {
+    console.error('Shopify removeFromCart userErrors:', res.body.cartLinesRemove.userErrors);
+    return null;
+  }
+
   return res?.body?.cartLinesRemove?.cart || null;
 }
 

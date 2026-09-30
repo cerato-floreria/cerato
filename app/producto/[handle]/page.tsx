@@ -1,6 +1,6 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { getProductByHandle, getAllProducts } from "@/lib/shopify";
+import { getProductByHandle, getAllProducts, toPascalCase } from "@/lib/shopify";
 import ProductDetail from "@/components/ProductDetail";
 import Script from "next/script";
 import { Metadata } from "next";
@@ -19,18 +19,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const price = product.priceRange?.minVariantPrice?.amount;
-  const currency = product.priceRange?.minVariantPrice?.currencyCode || "MXN";
+  const titleFormatted = toPascalCase(product.title);
   const imageUrl = product.featuredImage?.url;
 
   return {
-    title: `${product.title} | Cerato Floral Arte Floral`,
-    description: product.description || `Adquiere ${product.title} en Cerato Floral con entrega local en León, Guanajuato.`,
+    title: `${titleFormatted} | Cerato Floral Arte Floral`,
+    description: product.description || `Adquiere ${titleFormatted} en Cerato Floral con entrega local en León, Guanajuato.`,
     alternates: {
       canonical: `/producto/${product.handle}`
     },
     openGraph: {
-      title: `${product.title} | Cerato Floral`,
+      title: `${titleFormatted} | Cerato Floral`,
       description: product.description,
       url: `https://cerato-arte-floral.myshopify.com/producto/${product.handle}`,
       images: imageUrl
@@ -39,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
               url: imageUrl,
               width: 1200,
               height: 630,
-              alt: product.title
+              alt: titleFormatted
             }
           ]
         : []
@@ -55,16 +54,35 @@ export default async function ProductHandlePage({ params }: PageProps) {
     notFound();
   }
 
-  const imageUrls = (product.images?.edges || []).map((e) => e.node.url);
-  if (imageUrls.length === 0 && product.featuredImage?.url) {
-    imageUrls.push(product.featuredImage.url);
+  const titleFormatted = toPascalCase(product.title);
+
+  const imagesSet = new Set<string>();
+  if (product.featuredImage?.url) {
+    imagesSet.add(product.featuredImage.url);
   }
+  (product.images?.edges || []).forEach((e) => {
+    if (e.node?.url) imagesSet.add(e.node.url);
+  });
+  (product.variants?.edges || []).forEach((e) => {
+    if (e.node?.image?.url) imagesSet.add(e.node.image.url);
+  });
+
+  const imageUrls = Array.from(imagesSet);
+
+  const variants = (product.variants?.edges || []).map((e) => ({
+    id: e.node.id,
+    title: toPascalCase(e.node.title),
+    price: e.node.price?.amount ? parseFloat(e.node.price.amount) : 0,
+    currency: e.node.price?.currencyCode || "MXN",
+    availableForSale: e.node.availableForSale ?? true,
+    image: e.node.image?.url || null
+  }));
 
   const formattedProduct = {
     id: product.id,
     handle: product.handle,
     variantId: product.variants?.edges[0]?.node?.id || product.id,
-    name: product.title,
+    name: titleFormatted,
     price: product.priceRange?.minVariantPrice?.amount
       ? parseFloat(product.priceRange.minVariantPrice.amount)
       : 0,
@@ -73,13 +91,15 @@ export default async function ProductHandlePage({ params }: PageProps) {
     tag: product.tags?.[0] || "Edición Limitada",
     description: product.description,
     longDescription: product.description,
-    images: imageUrls
+    availableForSale: product.availableForSale ?? true,
+    images: imageUrls,
+    variants
   };
 
   const productSchema = {
     "@context": "https://schema.org/",
     "@type": "Product",
-    "name": product.title,
+    "name": titleFormatted,
     "image": imageUrls,
     "description": product.description,
     "sku": product.id,

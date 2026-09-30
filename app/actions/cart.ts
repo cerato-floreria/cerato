@@ -9,9 +9,13 @@ import {
 } from "@/lib/shopify";
 import { Cart } from "@/lib/shopify/types";
 
-export async function createCartAction(): Promise<Cart | null> {
+export async function createCartAction(
+  variantId?: string,
+  quantity: number = 1
+): Promise<Cart | null> {
   try {
-    return await createCart();
+    const lines = variantId ? [{ merchandiseId: variantId, quantity }] : [];
+    return await createCart(lines);
   } catch (error) {
     console.error("Error creating cart:", error);
     return null;
@@ -25,14 +29,17 @@ export async function addToCartAction(
 ): Promise<Cart | null> {
   try {
     if (!cartId) {
-      const newCart = await createCart();
-      if (!newCart) return null;
-      return await addToCart(newCart.id, variantId, quantity);
+      return await createCart([{ merchandiseId: variantId, quantity }]);
     }
-    return await addToCart(cartId, variantId, quantity);
+    const result = await addToCart(cartId, variantId, quantity);
+    if (!result) {
+      console.warn("Existing cart ID expired or invalid, creating fresh cart...");
+      return await createCart([{ merchandiseId: variantId, quantity }]);
+    }
+    return result;
   } catch (error) {
-    console.error("Error adding to cart:", error);
-    return null;
+    console.error("Error adding to cart, falling back to fresh cart:", error);
+    return await createCart([{ merchandiseId: variantId, quantity }]);
   }
 }
 

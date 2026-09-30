@@ -1,13 +1,26 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import CartDrawer from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
 import { getProductsAction } from "@/app/actions/shopify";
-import { buildTaxonomy } from "@/lib/shopify";
+import { buildTaxonomy, slugifyCategory } from "@/lib/shopify";
 import { NavigationCategory } from "@/lib/shopify/types";
+
+function toPascalCase(str: string): string {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .split(/([\s-_/()]+)/)
+    .map((word) => {
+      if (!word) return "";
+      if (word === "xl") return "XL";
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join("");
+}
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -17,11 +30,31 @@ const Navbar = () => {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
 
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const { cart, isOpen: isCartOpen, openCart, closeCart } = useCart();
   const totalCartCount = cart?.totalQuantity || 0;
 
+  const handleMouseEnter = (catName: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setActiveMenu(catName);
+  };
+
+  const handleMouseLeave = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setActiveMenu(null);
+    }, 250);
+  };
+
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setActiveMenu(null);
   }, [pathname]);
 
   useEffect(() => {
@@ -54,12 +87,24 @@ const Navbar = () => {
   }, []);
 
   const headerStyle =
-    isScrolled || !isHomePage
+    isScrolled || !isHomePage || activeMenu !== null
       ? "bg-primary py-3 shadow-2xl shadow-primary/40 border-b border-white/10"
       : "bg-transparent py-4 lg:py-5 hover:bg-primary/40 hover:backdrop-blur-md";
 
   return (
     <>
+      {/* Desktop Mega Menu Backdrop Blur */}
+      <div
+        className={`fixed inset-0 z-[90] bg-black/45 backdrop-blur-md transition-all duration-300 hidden lg:block ${
+          activeMenu !== null
+            ? "opacity-100 visible pointer-events-auto"
+            : "opacity-0 invisible pointer-events-none"
+        }`}
+        onClick={() => setActiveMenu(null)}
+        onMouseEnter={handleMouseLeave}
+        aria-hidden="true"
+      />
+
       <header className={`fixed top-0 left-0 right-0 z-[100] w-full px-6 transition-all duration-500 ${headerStyle}`}>
         <div className="mx-auto flex max-w-[1440px] items-center justify-between lg:px-14">
           {/* Logo */}
@@ -75,7 +120,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Dynamic Navigation derived from cat: & cat2: tags */}
-          <nav className="hidden flex-1 items-center justify-center gap-6 xl:gap-10 lg:flex px-8">
+          <nav className="hidden flex-1 items-center justify-center gap-6 xl:gap-8 lg:flex px-6">
             <Link
               className="text-[11px] font-bold uppercase tracking-widest text-white transition-all hover:text-accent-gold whitespace-nowrap"
               href="/"
@@ -85,58 +130,68 @@ const Navbar = () => {
 
             {categories.map((cat) => {
               const isHovered = activeMenu === cat.name;
+              const categorySlug = slugifyCategory(cat.name);
+              const categoryUrl = `/categoria/${categorySlug}`;
+
               return (
                 <div
                   key={cat.name}
-                  className="group relative flex items-center py-2"
-                  onMouseEnter={() => setActiveMenu(cat.name)}
-                  onMouseLeave={() => setActiveMenu(null)}
+                  className="group relative flex items-center py-3"
+                  onMouseEnter={() => handleMouseEnter(cat.name)}
+                  onMouseLeave={handleMouseLeave}
                 >
                   <Link
                     className="relative text-[11px] font-bold uppercase tracking-widest text-white/90 transition-all group-hover:text-white flex items-center gap-1 cursor-pointer py-1 whitespace-nowrap"
-                    href={`/flores?category=${encodeURIComponent(cat.name)}`}
+                    href={categoryUrl}
                   >
                     {cat.name}
-                    <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-accent-gold transition-all duration-300 group-hover:w-full"></span>
+                    <span
+                      className={`absolute bottom-0 left-0 h-[2px] bg-accent-gold transition-all duration-300 ${
+                        isHovered ? "w-full" : "w-0 group-hover:w-full"
+                      }`}
+                    ></span>
                   </Link>
 
-                  {/* Seamless Hover Bridge & Mega Menu Dropdown */}
+                  {/* Mega Menu Dropdown formatted in PascalCase */}
                   {cat.subtypes.length > 0 && (
                     <div
-                      className={`fixed left-[3%] right-[3%] top-[64px] w-[94%] pt-3 z-[150] transition-all duration-300 ease-out ${
+                      className={`fixed left-[3%] right-[3%] top-[54px] lg:top-[58px] w-[94%] pt-4 z-[150] transition-all duration-300 ease-out ${
                         isHovered
                           ? "opacity-100 visible translate-y-0 pointer-events-auto"
-                          : "opacity-0 invisible translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
+                          : "opacity-0 invisible translate-y-2 pointer-events-none"
                       }`}
+                      onMouseEnter={() => handleMouseEnter(cat.name)}
+                      onMouseLeave={handleMouseLeave}
                     >
-                      <div className="w-full bg-white/98 backdrop-blur-2xl shadow-2xl rounded-2xl border-2 border-primary/20 p-8 lg:p-10">
+                      <div className="w-full bg-[#FCFBF9]/98 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] rounded-[28px] border border-primary/10 p-8 lg:p-10">
                         <div className="flex items-center justify-between border-b border-primary/10 pb-4 mb-6">
-                          <h3 className="font-display text-xl font-bold text-primary flex items-center gap-2 uppercase tracking-wider">
-                            <span>🌸</span> {cat.name}
+                          <h3 className="font-display text-xl font-bold text-primary flex items-center gap-2">
+                            <span>🌸</span> {toPascalCase(cat.name)}
                           </h3>
                           <Link
-                            href={`/flores?category=${encodeURIComponent(cat.name)}`}
-                            className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent hover:text-primary transition-colors"
+                            href={categoryUrl}
+                            className="text-[11px] font-semibold text-accent hover:text-primary transition-colors flex items-center gap-1"
+                            onClick={() => setActiveMenu(null)}
                           >
-                            Ver Todo en {cat.name} →
+                            Ver todo en {toPascalCase(cat.name)} →
                           </Link>
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
                           {cat.subtypes.map((sub) => (
                             <div key={sub.type} className="flex flex-col gap-3">
-                              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary border-b border-primary/10 pb-2">
-                                {sub.type}
+                              <h4 className="text-[13px] font-bold text-primary border-b border-primary/10 pb-2">
+                                {toPascalCase(sub.type)}
                               </h4>
-                              <ul className="space-y-2">
+                              <ul className="space-y-2.5">
                                 {sub.products.map((prod) => (
                                   <li key={prod.id}>
                                     <Link
-                                      className="text-[12px] text-charcoal/70 hover:text-primary transition-colors font-medium block truncate"
+                                      className="text-[13px] text-charcoal/75 hover:text-primary hover:translate-x-1 transition-all font-medium block truncate"
                                       href={`/producto/${prod.handle}`}
                                       onClick={() => setActiveMenu(null)}
                                     >
-                                      {prod.title}
+                                      {toPascalCase(prod.title)}
                                     </Link>
                                   </li>
                                 ))}
@@ -203,7 +258,7 @@ const Navbar = () => {
             </Link>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-center h-10 w-10 text-white/50 hover:text-red-500 transition-colors duration-300 transform active:scale-90"
+              className="flex items-center justify-center h-10 w-10 text-white/50 hover:text-red-500 transition-colors duration-300 transform active:scale-90 cursor-pointer"
             >
               <span className="material-symbols-outlined text-3xl">close</span>
             </button>
@@ -223,11 +278,11 @@ const Navbar = () => {
               {categories.map((cat) => (
                 <li key={cat.name}>
                   <Link
-                    href={`/flores?category=${encodeURIComponent(cat.name)}`}
-                    className="flex items-center justify-between text-xl font-display text-white/90 transition-all hover:text-accent-gold"
+                    href={`/categoria/${slugifyCategory(cat.name)}`}
+                    className="flex items-center justify-between text-xl font-display text-white/90 transition-all hover:text-accent-gold text-base"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <span>{cat.name}</span>
+                    <span>{toPascalCase(cat.name)}</span>
                   </Link>
                 </li>
               ))}

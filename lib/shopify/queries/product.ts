@@ -33,7 +33,7 @@ export const productFragment = `
         }
       }
     }
-    variants(first: 10) {
+    variants(first: 20) {
       edges {
         node {
           id
@@ -42,6 +42,12 @@ export const productFragment = `
           price {
             amount
             currencyCode
+          }
+          image {
+            url
+            altText
+            width
+            height
           }
         }
       }

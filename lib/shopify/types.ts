@@ -40,6 +40,7 @@ export interface ShopifyProduct {
         title: string;
         availableForSale: boolean;
         price: MoneyV2;
+        image?: ShopifyImage | null;
       };
     }>;
   };
@@ -73,6 +74,7 @@ export interface CartItem {
   merchandise: {
     id: string;
     title: string;
+    image?: ShopifyImage | null;
     product: ShopifyProduct;
   };
 }
