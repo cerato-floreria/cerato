@@ -12,6 +12,7 @@ interface ProductCardProps {
   price: number;
   currency?: string;
   image: string;
+  availableForSale?: boolean;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -20,6 +21,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   name,
   price,
   image,
+  availableForSale = true,
 }) => {
   const targetSlug = handle || id;
   const displayName = useMemo(() => toPascalCase(name), [name]);
@@ -51,9 +53,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   useEffect(() => {
-    checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      checkOverflow();
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, [displayName]);
 
   const handleMouseEnter = () => {
@@ -80,6 +85,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
         className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
       />
+
+      {/* Out of Stock Badge */}
+      {!availableForSale && (
+        <div className="absolute top-3.5 right-3.5 z-20">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[9px] font-bold tracking-wider text-white uppercase shadow-md backdrop-blur-md border border-white/10">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-400"></span>
+            Agotado
+          </span>
+        </div>
+      )}
 
       {/* Information Overlay */}
       <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-5 pt-16 bg-gradient-to-t from-primary/95 via-primary/60 to-transparent transition-all duration-500">
@@ -124,9 +139,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* View Product CTA Button */}
-        <button className="w-full rounded-lg bg-white/95 py-2.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary transition-all group-hover:bg-accent-gold group-hover:text-white shadow-md backdrop-blur-sm cursor-pointer">
-          Ver Detalles
-        </button>
+        <span className="w-full block text-center rounded-lg bg-white/95 py-2.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary transition-all group-hover:bg-accent-gold group-hover:text-white shadow-md backdrop-blur-sm">
+          {!availableForSale ? 'Agotado • Ver Detalles' : 'Ver Detalles'}
+        </span>
       </div>
     </Link>
   );

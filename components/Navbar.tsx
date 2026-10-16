@@ -52,10 +52,12 @@ const Navbar = () => {
     }, 250);
   };
 
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setIsMobileMenuOpen(false);
     setActiveMenu(null);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -218,7 +220,7 @@ const Navbar = () => {
             <button
               onClick={openCart}
               className="relative flex items-center justify-center h-10 w-10 text-white hover:text-accent-gold transition-colors cursor-pointer"
-              aria-label="Abrir Carrito"
+              aria-label={`Abrir carrito de compras${totalCartCount > 0 ? `, ${totalCartCount} productos` : ''}`}
             >
               <span className="material-symbols-outlined text-2xl">shopping_bag</span>
               {totalCartCount > 0 && (
@@ -230,7 +232,8 @@ const Navbar = () => {
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="flex items-center justify-center h-10 w-10 text-white hover:text-accent-gold transition-colors lg:hidden z-[110]"
-              aria-label="Menú Móvil"
+              aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú de navegación"}
+              aria-expanded={isMobileMenuOpen}
             >
               <span className="material-symbols-outlined text-3xl">
                 {isMobileMenuOpen ? "close" : "menu"}
@@ -246,10 +249,14 @@ const Navbar = () => {
           isMobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
+        aria-hidden="true"
       ></div>
 
       {/* Mobile Drawer */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú de navegación móvil"
         className={`fixed right-0 top-0 bottom-0 z-[110] w-[85%] max-w-sm bg-primary border-l border-white/5 shadow-[-20px_0_40px_rgba(0,0,0,0.3)] transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) lg:hidden ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
@@ -264,6 +271,7 @@ const Navbar = () => {
             </Link>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Cerrar menú móvil"
               className="flex items-center justify-center h-10 w-10 text-white/50 hover:text-red-500 transition-colors duration-300 transform active:scale-90 cursor-pointer"
             >
               <span className="material-symbols-outlined text-3xl">close</span>

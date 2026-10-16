@@ -30,16 +30,16 @@ export default function CategoryClientPage({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubtype, setSelectedSubtype] = useState(resolvedInitialSubtype);
+  const [prevInitialSubtype, setPrevInitialSubtype] = useState(resolvedInitialSubtype);
   const [maxPrice, setMaxPrice] = useState(10000);
   const [showMinifiedFilters, setShowMinifiedFilters] = useState(false);
 
   const mainFiltersRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (resolvedInitialSubtype) {
-      setSelectedSubtype(resolvedInitialSubtype);
-    }
-  }, [resolvedInitialSubtype]);
+  if (prevInitialSubtype !== resolvedInitialSubtype) {
+    setPrevInitialSubtype(resolvedInitialSubtype);
+    setSelectedSubtype(resolvedInitialSubtype);
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -90,6 +90,7 @@ export default function CategoryClientPage({
           image:
             p.featuredImage?.url ||
             "https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=400",
+          availableForSale: p.availableForSale !== false,
           categoryPairs: p.categoryPairs || [],
           types: p.types || [],
           rawProduct: p,
@@ -173,7 +174,7 @@ export default function CategoryClientPage({
   };
 
   return (
-    <main className="flex-1 pt-32 lg:pt-44 pb-24 bg-background-light">
+    <div className="flex-1 pt-32 lg:pt-44 pb-24 bg-background-light">
       {/* Minified Sticky Filter Bar - Appears upon scrolling past the main filter block */}
       <MinifiedProductFilters
         isVisible={showMinifiedFilters}
@@ -242,6 +243,6 @@ export default function CategoryClientPage({
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }

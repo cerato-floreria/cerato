@@ -135,6 +135,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     };
   }, [zoomedImage]);
 
+  const activeVariantImage = activeVariant?.image;
+
   // Display only real available distinct images, placing the active variant's image at the top if selected
   const displayImages = useMemo(() => {
     const baseImages =
@@ -142,21 +144,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
         ? product.images
         : ['https://images.unsplash.com/photo-1519340333755-5072120ef3aa'];
 
-    if (activeVariant?.image) {
+    if (activeVariantImage) {
       const withoutVariantImg = baseImages.filter(
-        (img) => img !== activeVariant.image,
+        (img) => img !== activeVariantImage,
       );
-      return [activeVariant.image, ...withoutVariantImg];
+      return [activeVariantImage, ...withoutVariantImg];
     }
     return baseImages;
-  }, [product.images, activeVariant?.image]);
+  }, [product.images, activeVariantImage]);
 
   return (
-    <main className="bg-background-light pt-28 pb-16 mb-6 lg:pt-32">
+    <div className="bg-background-light pt-28 pb-16 mb-6 lg:pt-32">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-20">
         <div className="flex flex-col gap-10 lg:flex-row lg:gap-20 items-start">
           {/* Left Section: Breadcrumbs & Dynamic Image Gallery */}
-          <div className="w-full lg:w-[55%] sticky top-28">
+          <div className="w-full lg:w-[55%] lg:sticky lg:top-28">
             {/* Breadcrumbs */}
             <nav className="mb-4 flex items-center gap-0.5 text-[11px] font-medium tracking-wide text-gray-500">
               <Link className="transition-colors hover:text-primary" href="/">
@@ -317,7 +319,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                 <div className="mb-10 lg:mb-16 space-y-8">
                   {primaryDescription && (
                     <p className="font-display text-lg italic leading-relaxed text-primary sm:text-xl lg:text-2xl">
-                      "{primaryDescription}"
+                      &ldquo;{primaryDescription}&rdquo;
                     </p>
                   )}
 
@@ -420,6 +422,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
         <button
           className="absolute right-6 top-6 z-[210] flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-all hover:bg-red-700 hover:scale-110 active:scale-95 cursor-pointer"
           onClick={() => setZoomedImage(null)}
+          aria-label="Cerrar vista ampliada"
         >
           <span className="material-symbols-outlined text-2xl font-bold">
             close
@@ -444,7 +447,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 };
 

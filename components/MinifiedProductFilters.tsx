@@ -45,23 +45,34 @@ const MinifiedProductFilters: React.FC<MinifiedProductFiltersProps> = ({
       }`}
       aria-hidden={!isVisible}
     >
-      <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-12 py-2.5">
-        <div className="flex items-center justify-between gap-3 sm:gap-4">
+      <div className="mx-auto max-w-[1536px] px-3 sm:px-6 lg:px-12 py-2 sm:py-2.5">
+        {/* Mobile Header Row (Category Name & Full Product Count Badge) */}
+        <div className="flex sm:hidden items-center justify-between gap-2 pb-1.5 mb-1.5 border-b border-primary/10">
+          <span className="font-display font-bold text-xs uppercase tracking-wider text-primary truncate">
+            {categoryName}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary tracking-wide shrink-0">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent-gold"></span>
+            {productCount} {productCount === 1 ? "producto" : "productos"}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Category Info (Desktop & Tablet) */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
             <span className="font-display font-bold text-xs uppercase tracking-wider text-primary truncate max-w-[160px] lg:max-w-[240px]">
               {categoryName}
             </span>
             <span className="text-[10px] font-bold text-accent-gold">•</span>
-            <span className="text-[10px] font-bold text-charcoal/50 uppercase tracking-widest whitespace-nowrap">
-              {productCount} {productCount === 1 ? "prod." : "prods."}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 px-2.5 py-0.5 text-[10px] font-bold text-primary uppercase tracking-widest whitespace-nowrap">
+              {productCount} {productCount === 1 ? "producto" : "productos"}
             </span>
           </div>
 
           {/* Minified Filters Controls */}
           <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-3xl justify-end sm:justify-center">
             {/* Subcategory Select */}
-            <div className="relative flex-1 min-w-[125px] sm:max-w-[210px]">
+            <div className="relative flex-1 min-w-[130px] sm:max-w-[210px]">
               <select
                 value={selectedCategory}
                 onChange={(e) => onCategory(e.target.value)}
@@ -81,7 +92,7 @@ const MinifiedProductFilters: React.FC<MinifiedProductFiltersProps> = ({
             </div>
 
             {/* Compact Search Field */}
-            <div className="relative flex-1 min-w-[105px] sm:max-w-[200px]">
+            <div className="relative flex-1 min-w-[110px] sm:max-w-[200px]">
               <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-primary/35 pointer-events-none">
                 search
               </span>
@@ -123,13 +134,6 @@ const MinifiedProductFilters: React.FC<MinifiedProductFiltersProps> = ({
                 <span className="hidden sm:inline">Limpiar</span>
               </button>
             )}
-          </div>
-
-          {/* Mobile Product Count */}
-          <div className="sm:hidden shrink-0">
-            <span className="text-[10px] font-bold text-charcoal/50 uppercase tracking-widest whitespace-nowrap">
-              {productCount} p.
-            </span>
           </div>
         </div>
       </div>

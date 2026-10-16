@@ -129,11 +129,23 @@ const FeaturedProducts = () => {
                           DESTACADO CERATO
                         </span>
                       </div>
+
+                      {/* Out of Stock Badge */}
+                      {product.availableForSale === false && (
+                        <div className="absolute top-4 right-4 z-20">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[9px] font-bold tracking-wider text-white uppercase shadow-md backdrop-blur-md border border-white/10">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-400"></span>
+                            Agotado
+                          </span>
+                        </div>
+                      )}
                     </Link>
                   ) : (
-                    <div
+                    <button
+                      type="button"
                       onClick={() => setCurrentIndex(index)}
-                      className="relative mb-8 w-full aspect-square overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-700 md:mb-10 cursor-pointer"
+                      aria-label={`Seleccionar ${product.title}`}
+                      className="relative mb-8 w-full aspect-square overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-700 md:mb-10 cursor-pointer block text-left"
                     >
                       <Image
                         src={imageUrl}
@@ -142,7 +154,17 @@ const FeaturedProducts = () => {
                         className="h-full w-full object-cover"
                         sizes="320px"
                       />
-                    </div>
+
+                      {/* Out of Stock Badge for inactive item */}
+                      {product.availableForSale === false && (
+                        <div className="absolute top-4 right-4 z-20">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[9px] font-bold tracking-wider text-white uppercase shadow-md backdrop-blur-md border border-white/10">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-400"></span>
+                            Agotado
+                          </span>
+                        </div>
+                      )}
+                    </button>
                   )}
 
                   <div
@@ -160,11 +182,24 @@ const FeaturedProducts = () => {
                     </p>
                     {isActive && (
                       <button
-                        onClick={() => addItem(variantId, 1)}
-                        disabled={isLoading}
-                        className="mt-2 rounded-lg bg-primary px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-white shadow-md hover:bg-primary/90 transition-all cursor-pointer disabled:opacity-50"
+                        onClick={() =>
+                          product.availableForSale !== false &&
+                          addItem(variantId, 1)
+                        }
+                        disabled={
+                          isLoading || product.availableForSale === false
+                        }
+                        className={`mt-2 rounded-lg px-6 py-2 text-[10px] font-bold uppercase tracking-widest text-white shadow-md transition-all ${
+                          product.availableForSale === false
+                            ? 'bg-neutral-400 cursor-not-allowed opacity-80'
+                            : 'bg-primary hover:bg-primary/90 cursor-pointer disabled:opacity-50'
+                        }`}
                       >
-                        {isLoading ? 'AÑADIENDO...' : 'AGREGAR AL CARRITO'}
+                        {product.availableForSale === false
+                          ? 'AGOTADO'
+                          : isLoading
+                          ? 'AÑADIENDO...'
+                          : 'AGREGAR AL CARRITO'}
                       </button>
                     )}
                   </div>

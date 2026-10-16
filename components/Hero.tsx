@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { getProductsAction } from '@/app/actions/shopify';
 import { ShopifyProduct } from '@/lib/shopify/types';
@@ -15,7 +15,6 @@ interface HeroProps {
 const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
   const [products, setProducts] = useState<ShopifyProduct[]>(initialProducts);
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<ShopifyProduct[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -36,30 +35,24 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
   }, [initialProducts]);
 
   // Handle filtering with real store products
-  useEffect(() => {
+  const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (q.length > 0) {
-      const filtered = products
-        .filter((product) => {
-          const titleMatch = product.title?.toLowerCase().includes(q);
-          const tagMatch = product.tags?.some((t) =>
-            t.toLowerCase().includes(q),
-          );
-          const catMatch = product.categories?.some((c) =>
-            c.toLowerCase().includes(q),
-          );
-          const typeMatch = product.types?.some((t) =>
-            t.toLowerCase().includes(q),
-          );
-          return titleMatch || tagMatch || catMatch || typeMatch;
-        })
-        .slice(0, 5); // Limit to top 5 suggestions
-      setSuggestions(filtered);
-      setIsOpen(true);
-    } else {
-      setSuggestions([]);
-      setIsOpen(false);
-    }
+    if (!q) return [];
+    return products
+      .filter((product) => {
+        const titleMatch = product.title?.toLowerCase().includes(q);
+        const tagMatch = product.tags?.some((t) =>
+          t.toLowerCase().includes(q),
+        );
+        const catMatch = product.categories?.some((c) =>
+          c.toLowerCase().includes(q),
+        );
+        const typeMatch = product.types?.some((t) =>
+          t.toLowerCase().includes(q),
+        );
+        return titleMatch || tagMatch || catMatch || typeMatch;
+      })
+      .slice(0, 5); // Limit to top 5 suggestions
   }, [query, products]);
 
   // Click outside handler
@@ -147,7 +140,10 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
                   type="text"
                   aria-label="Buscar productos florales"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setIsOpen(e.target.value.trim().length > 0);
+                  }}
                   onFocus={() => query.length > 0 && setIsOpen(true)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 />
@@ -222,6 +218,11 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
                                     </span>
                                   </>
                                 )}
+                                {!product.availableForSale && (
+                                  <span className="ml-1 rounded-full bg-black/65 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">
+                                    Agotado
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className="ml-auto opacity-0 transition-opacity group-hover:opacity-100 shrink-0">
@@ -239,7 +240,7 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
                         search_off
                       </span>
                       <p className="text-sm font-display italic text-primary/60">
-                        No encontramos resultados para "{query}"
+                        No encontramos resultados para &ldquo;{query}&rdquo;
                       </p>
                       <p className="text-xs text-charcoal/40 mt-1">
                         Prueba buscando por nombre o tipo de flor (rosas,

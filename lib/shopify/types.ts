@@ -84,6 +84,7 @@ export interface CartItem {
   merchandise: {
     id: string;
     title: string;
+    price?: MoneyV2;
     image?: ShopifyImage | null;
     product: ShopifyProduct;
   };

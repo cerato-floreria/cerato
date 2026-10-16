@@ -30,7 +30,7 @@ export async function shopifyFetch<T>({
   cache = 'force-cache',
 }: {
   query: string;
-  variables?: Record<string, any>;
+  variables?: Record<string, unknown>;
   tags?: string[];
   cache?: RequestCache;
 }): Promise<{ status: number; body: T } | never> {
@@ -44,7 +44,7 @@ export async function shopifyFetch<T>({
     !storefrontAccessToken || storefrontAccessToken.includes('placeholder');
 
   if (isInvalidToken) {
-    return { status: 401, body: null as any };
+    return { status: 401, body: null as unknown as T };
   }
 
   let attempt = 0;
@@ -85,14 +85,14 @@ export async function shopifyFetch<T>({
       attempt++;
       if (attempt >= maxAttempts) {
         console.error('Shopify fetch failed after max retries:', error);
-        return { status: 500, body: null as any };
+        return { status: 500, body: null as unknown as T };
       }
       const waitMs = Math.pow(2, attempt) * 500;
       await new Promise((res) => setTimeout(res, waitMs));
     }
   }
 
-  return { status: 500, body: null as any };
+  return { status: 500, body: null as unknown as T };
 }
 
 /**

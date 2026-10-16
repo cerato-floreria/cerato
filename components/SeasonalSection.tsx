@@ -166,12 +166,12 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white transition-all hover:bg-accent-gold hover:text-primary shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       aria-label={
                         product.availableForSale
-                          ? 'Agregar al carrito'
-                          : 'Producto agotado'
+                          ? `Agregar ${toPascalCase(product.title)} al carrito`
+                          : `${toPascalCase(product.title)} está agotado`
                       }
                       title={
                         product.availableForSale
-                          ? 'Agregar al carrito'
+                          ? `Agregar ${toPascalCase(product.title)} al carrito`
                           : 'Producto agotado'
                       }
                     >
