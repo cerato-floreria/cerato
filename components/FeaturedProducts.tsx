@@ -10,6 +10,7 @@ import { useCart } from '@/context/CartContext';
 
 const FeaturedProducts = () => {
   const [featured, setFeatured] = useState<ShopifyProduct[]>([]);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const { addItem, isLoading } = useCart();
 
@@ -122,6 +123,7 @@ const FeaturedProducts = () => {
                         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover/img:scale-105"
                         sizes="320px"
                       />
+
                       <div className="absolute bottom-6 left-6">
                         <span className="rounded-xl bg-primary/60 border border-white/10 px-4 py-2 text-[8px] font-bold uppercase tracking-widest text-white shadow-lg backdrop-blur-md md:px-5 md:py-2.5">
                           DESTACADO CERATO
