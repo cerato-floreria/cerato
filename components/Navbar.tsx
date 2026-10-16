@@ -163,7 +163,7 @@ const Navbar = () => {
                       onMouseEnter={() => handleMouseEnter(cat.name)}
                       onMouseLeave={handleMouseLeave}
                     >
-                      <div className="w-full bg-[#FCFBF9]/98 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] rounded-[28px] border border-primary/10 p-8 lg:p-10">
+                      <div className="relative w-full bg-[#FCFBF9]/90 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] rounded-[28px] border border-primary/10 pt-7 px-8 lg:pt-8 lg:px-10 pb-0 overflow-hidden">
                         <div className="flex items-center justify-between border-b border-primary/10 pb-4 mb-6">
                           <h3 className="font-display text-xl font-bold text-primary flex items-center gap-2">
                             <span>🌸</span> {toPascalCase(cat.name)}
@@ -177,7 +177,7 @@ const Navbar = () => {
                           </Link>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 max-h-[min(65vh,540px)] overflow-y-auto custom-scrollbar menu-scroll-fade pb-20 pr-1">
                           {cat.subtypes.map((sub) => (
                             <div key={sub.type} className="flex flex-col gap-3">
                               <h4 className="text-[13px] font-bold text-primary border-b border-primary/10 pb-2">
@@ -199,6 +199,12 @@ const Navbar = () => {
                             </div>
                           ))}
                         </div>
+
+                        {/* Bottom Glass Blur Overlay - Seamless frosted diffusion without division lines */}
+                        <div
+                          className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 glass-fade-bottom rounded-b-[28px]"
+                          aria-hidden="true"
+                        />
                       </div>
                     </div>
                   )}

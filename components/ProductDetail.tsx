@@ -100,10 +100,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     };
   }, [product.description, product.longDescription]);
 
-  const increment = () => setQuantity((q: number) => q + 1);
-  const decrement = () => setQuantity((q: number) => (q > 1 ? q - 1 : 1));
+  const increment = () => {
+    if (!isAvailable) return;
+    setQuantity((q: number) => q + 1);
+  };
+  const decrement = () => {
+    if (!isAvailable) return;
+    setQuantity((q: number) => (q > 1 ? q - 1 : 1));
+  };
 
   const handleAddToCart = () => {
+    if (!isAvailable) return;
     const targetVariantId =
       activeVariant?.id ||
       product.variantId ||
@@ -327,23 +334,49 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
 
               {/* Actions: Quantity & CTA */}
               <div className="flex items-center gap-6 pt-4">
-                <div className="flex h-16 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div
+                  className={`flex h-16 items-center overflow-hidden rounded-xl border transition-all ${
+                    !isAvailable
+                      ? 'border-gray-200 bg-gray-100/80 opacity-50 cursor-not-allowed select-none'
+                      : 'border-gray-200 bg-white shadow-sm'
+                  }`}
+                  aria-disabled={!isAvailable}
+                >
                   <button
+                    type="button"
                     onClick={decrement}
-                    disabled={!isAvailable}
-                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:opacity-30"
+                    disabled={!isAvailable || quantity <= 1}
+                    aria-label="Disminuir cantidad"
+                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:opacity-30"
                   >
                     <span className="material-symbols-outlined text-sm">
                       remove
                     </span>
                   </button>
-                  <span className="font-display flex h-full w-12 items-center justify-center text-lg font-bold text-primary">
-                    {quantity}
-                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={isAvailable ? quantity : 0}
+                    onChange={(e) => {
+                      if (!isAvailable) return;
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val) && val >= 1) {
+                        setQuantity(val);
+                      } else if (e.target.value === '') {
+                        setQuantity(1);
+                      }
+                    }}
+                    disabled={!isAvailable}
+                    aria-label="Cantidad de productos"
+                    className="font-display h-full w-14 text-center text-lg font-bold text-primary bg-transparent focus:outline-none disabled:text-gray-400 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
                   <button
+                    type="button"
                     onClick={increment}
                     disabled={!isAvailable}
-                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:opacity-30"
+                    aria-label="Aumentar cantidad"
+                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:opacity-30"
                   >
                     <span className="material-symbols-outlined text-sm">
                       add

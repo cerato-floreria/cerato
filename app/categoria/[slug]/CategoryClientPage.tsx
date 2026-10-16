@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import ProductFilters from "@/components/ProductFilters";
+import MinifiedProductFilters from "@/components/MinifiedProductFilters";
 import ProductSection from "@/components/ProductSection";
 import { CategorySubItem, ShopifyProduct } from "@/lib/shopify/types";
 
@@ -9,16 +10,52 @@ interface CategoryClientPageProps {
   categoryName: string;
   subtypes: CategorySubItem[];
   allProducts: ShopifyProduct[];
+  initialSubtype?: string;
 }
 
 export default function CategoryClientPage({
   categoryName,
   subtypes,
   allProducts,
+  initialSubtype = "",
 }: CategoryClientPageProps) {
+  // Resolve initial subtype against available subtypes (case-insensitive)
+  const resolvedInitialSubtype = useMemo(() => {
+    if (!initialSubtype) return "";
+    const matched = subtypes.find(
+      (s) => s.type.toLowerCase() === initialSubtype.toLowerCase()
+    );
+    return matched ? matched.type : initialSubtype;
+  }, [subtypes, initialSubtype]);
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSubtype, setSelectedSubtype] = useState("");
+  const [selectedSubtype, setSelectedSubtype] = useState(resolvedInitialSubtype);
   const [maxPrice, setMaxPrice] = useState(10000);
+  const [showMinifiedFilters, setShowMinifiedFilters] = useState(false);
+
+  const mainFiltersRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (resolvedInitialSubtype) {
+      setSelectedSubtype(resolvedInitialSubtype);
+    }
+  }, [resolvedInitialSubtype]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!mainFiltersRef.current) return;
+      const rect = mainFiltersRef.current.getBoundingClientRect();
+      // When the bottom of the main filter bar scrolls above the bottom of the navbar (~64px)
+      setShowMinifiedFilters(rect.bottom <= 64);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   // Available subtype names for the filter dropdown
   const subtypeNames = useMemo(() => {
@@ -129,8 +166,31 @@ export default function CategoryClientPage({
       .filter((section) => section.products.length > 0);
   }, [selectedSubtype, subtypes, filteredProducts, categoryName]);
 
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSelectedSubtype("");
+    setMaxPrice(10000);
+  };
+
   return (
     <main className="flex-1 pt-32 lg:pt-44 pb-24 bg-background-light">
+      {/* Minified Sticky Filter Bar - Appears upon scrolling past the main filter block */}
+      <MinifiedProductFilters
+        isVisible={showMinifiedFilters}
+        categoryName={categoryName}
+        productCount={filteredProducts.length}
+        searchQuery={searchQuery}
+        selectedCategory={selectedSubtype}
+        price={maxPrice}
+        onSearch={setSearchQuery}
+        onCategory={setSelectedSubtype}
+        onPrice={setMaxPrice}
+        onClear={handleClearFilters}
+        options={subtypeNames}
+        allLabel="Todos los Tipos"
+        maxPriceLimit={10000}
+      />
+
       <div className="mx-auto max-w-[1536px] px-6 lg:px-12">
         {/* Page Header - Catálogo {categoryName} */}
         <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -146,23 +206,21 @@ export default function CategoryClientPage({
         </div>
 
         {/* Scoped Filter Bar */}
-        <ProductFilters
-          searchQuery={searchQuery}
-          selectedCategory={selectedSubtype}
-          price={maxPrice}
-          onSearch={setSearchQuery}
-          onCategory={setSelectedSubtype}
-          onPrice={setMaxPrice}
-          onClear={() => {
-            setSearchQuery("");
-            setSelectedSubtype("");
-            setMaxPrice(10000);
-          }}
-          options={subtypeNames}
-          categoryLabel="Tipo / Subcategoría"
-          allLabel="Todos los Tipos"
-          maxPriceLimit={10000}
-        />
+        <div ref={mainFiltersRef}>
+          <ProductFilters
+            searchQuery={searchQuery}
+            selectedCategory={selectedSubtype}
+            price={maxPrice}
+            onSearch={setSearchQuery}
+            onCategory={setSelectedSubtype}
+            onPrice={setMaxPrice}
+            onClear={handleClearFilters}
+            options={subtypeNames}
+            categoryLabel="Tipo / Subcategoría"
+            allLabel="Todos los Tipos"
+            maxPriceLimit={10000}
+          />
+        </div>
 
         {/* Dynamic Product Sections */}
         {sectionsToRender.length > 0 ? (

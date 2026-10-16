@@ -65,6 +65,16 @@ export interface ShopifyCollection {
   };
 }
 
+export interface SeasonalCollectionData {
+  id: string;
+  handle: string;
+  title: string;
+  seasonName: string;
+  description?: string;
+  descriptionHtml?: string;
+  products: ShopifyProduct[];
+}
+
 export interface CartItem {
   id: string;
   quantity: number;

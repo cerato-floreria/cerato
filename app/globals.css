@@ -49,15 +49,32 @@
   .asymmetric-mosaic {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: minmax(150px, auto);
-    gap: 16px;
+    gap: 12px;
   }
 
+  @media (min-width: 640px) {
+    .asymmetric-mosaic {
+      gap: 14px;
+    }
+  }
+
+  /* Tablet: 3 columns */
+  @media (min-width: 768px) {
+    .asymmetric-mosaic {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+  }
+
+  /* Desktop: 3 columns with asymmetric mosaic rows */
   @media (min-width: 1280px) {
     .asymmetric-mosaic {
       grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: minmax(150px, auto);
+      gap: 16px;
     }
   }
+
   
   .curved-carousel-container {
     perspective: 2000px;
@@ -87,6 +104,25 @@
     background: linear-gradient(to top, rgba(45, 27, 46, 0.85) 0%, rgba(45, 27, 46, 0.3) 60%, rgba(45, 27, 46, 0) 100%);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+  }
+
+  .glass-fade-bottom {
+    background: linear-gradient(
+      to top,
+      #FCFBF9 0%,
+      rgba(252, 251, 249, 0.85) 30%,
+      rgba(252, 251, 249, 0.3) 70%,
+      transparent 100%
+    );
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    -webkit-mask-image: linear-gradient(to top, black 25%, rgba(0, 0, 0, 0.5) 60%, transparent 100%);
+    mask-image: linear-gradient(to top, black 25%, rgba(0, 0, 0, 0.5) 60%, transparent 100%);
+  }
+
+  .menu-scroll-fade {
+    -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 90px), transparent 100%);
+    mask-image: linear-gradient(to bottom, black calc(100% - 90px), transparent 100%);
   }
 
   .bg-wave-pattern {
@@ -119,4 +155,73 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Mosaic Gallery: Hover clarity and blur transition */
+.mosaic-card-image {
+  filter: blur(3px);
+  transform: scale(1.04);
+  transition: filter 0.4s ease-out, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: filter, transform;
+}
+
+.group:hover .mosaic-card-image,
+.group:active .mosaic-card-image {
+  filter: none !important;
+  transform: scale(1.08);
+}
+
+.mosaic-card-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(25, 12, 30, 0.22) 0%,
+    rgba(25, 12, 30, 0.38) 45%,
+    rgba(25, 12, 30, 0.55) 100%
+  );
+  transition: background 0.35s ease-out;
+}
+
+.group:hover .mosaic-card-overlay,
+.group:active .mosaic-card-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(25, 12, 30, 0.20) 0%,
+    rgba(25, 12, 30, 0.35) 45%,
+    rgba(25, 12, 30, 0.50) 100%
+  );
+}
+
+/* Cotizar Evento WhatsApp CTA Animations */
+@keyframes pulse-ring-glow {
+  0% {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 14px rgba(37, 211, 102, 0);
+  }
+  100% {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+  }
+}
+
+@keyframes cta-shine-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-25deg);
+  }
+  25%, 100% {
+    transform: translateX(350%) skewX(-25deg);
+  }
+}
+
+.animate-cotizar-cta {
+  animation: pulse-ring-glow 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-cotizar-shine {
+  animation: cta-shine-sweep 3.2s ease-in-out infinite;
+}
+
+
 

@@ -5,8 +5,13 @@ import {
   CategorySubItem,
   TaxonomyData,
   CategoryTypePair,
+  SeasonalCollectionData,
 } from './types';
-import { getProductsQuery, getProductByHandleQuery } from './queries/product';
+import {
+  getProductsQuery,
+  getProductByHandleQuery,
+  getCollectionsQuery,
+} from './queries/product';
 import {
   createCartMutation,
   addToCartMutation,
@@ -326,6 +331,77 @@ export async function getProductByHandle(
 
   const mock = getMockProducts().find((p) => p.handle === handle);
   return mock ? parseProductTags(mock) : null;
+}
+
+/**
+ * Fetches the active seasonal collection whose title begins with "temporada: {nombre}".
+ * Returns null if no active seasonal collection is found or if it has no products.
+ */
+export async function getSeasonalCollection(): Promise<SeasonalCollectionData | null> {
+  const response = await shopifyFetch<{
+    collections: {
+      edges: Array<{
+        node: {
+          id: string;
+          handle: string;
+          title: string;
+          description: string;
+          descriptionHtml?: string;
+          products: {
+            edges: Array<{ node: ShopifyProduct }>;
+          };
+        };
+      }>;
+    };
+  }>({
+    query: getCollectionsQuery,
+    tags: ['collections'],
+    cache: 'no-store',
+  });
+
+  if (response?.body?.collections?.edges) {
+    const collections = response.body.collections.edges.map((edge) => edge.node);
+    const seasonal = collections.find((c) => /^temporada:\s*/i.test(c.title));
+
+    if (seasonal) {
+      const seasonName = seasonal.title.replace(/^temporada:\s*/i, '').trim();
+      const products = seasonal.products.edges.map((edge) =>
+        parseProductTags(edge.node),
+      );
+
+      if (products.length > 0) {
+        return {
+          id: seasonal.id,
+          handle: seasonal.handle,
+          title: seasonal.title,
+          seasonName,
+          description: seasonal.description || '',
+          descriptionHtml: seasonal.descriptionHtml || '',
+          products,
+        };
+      }
+    }
+  }
+
+  // Fallback: check taxonomy or mock products
+  const all = await getAllProducts();
+  const taxonomy = buildTaxonomy(all);
+  const seasonEntries = Array.from(taxonomy.temporadaCollections.entries());
+  if (seasonEntries.length > 0) {
+    const [seasonKey, seasonProducts] = seasonEntries[0];
+    if (seasonProducts.length > 0) {
+      return {
+        id: `temporada-${seasonKey}`,
+        handle: `temporada-${seasonKey}`,
+        title: `temporada: ${seasonKey}`,
+        seasonName: seasonKey,
+        description: '',
+        products: seasonProducts,
+      };
+    }
+  }
+
+  return null;
 }
 
 /**

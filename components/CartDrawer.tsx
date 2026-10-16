@@ -136,11 +136,15 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                     item.merchandise?.title ||
                     'Producto Floral'
                 );
-                const variantTitle = toPascalCase(
-                  item.merchandise?.title || ''
-                );
+                const rawVariantTitle = (item.merchandise?.title || '').trim();
+                const isDefaultVariant =
+                  !rawVariantTitle ||
+                  rawVariantTitle.toLowerCase() === 'default title' ||
+                  rawVariantTitle.toLowerCase() === 'default';
+
+                const variantTitle = !isDefaultVariant ? toPascalCase(rawVariantTitle) : '';
                 const displayTitle =
-                  variantTitle && variantTitle !== productTitle
+                  variantTitle && variantTitle.toLowerCase() !== productTitle.toLowerCase()
                     ? `${productTitle} – ${variantTitle}`
                     : productTitle;
                 const imageUrl =
