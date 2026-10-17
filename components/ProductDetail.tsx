@@ -100,10 +100,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     };
   }, [product.description, product.longDescription]);
 
-  const increment = () => setQuantity((q: number) => q + 1);
-  const decrement = () => setQuantity((q: number) => (q > 1 ? q - 1 : 1));
+  const increment = () => {
+    if (!isAvailable) return;
+    setQuantity((q: number) => q + 1);
+  };
+  const decrement = () => {
+    if (!isAvailable) return;
+    setQuantity((q: number) => (q > 1 ? q - 1 : 1));
+  };
 
   const handleAddToCart = () => {
+    if (!isAvailable) return;
     const targetVariantId =
       activeVariant?.id ||
       product.variantId ||
@@ -128,6 +135,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     };
   }, [zoomedImage]);
 
+  const activeVariantImage = activeVariant?.image;
+
   // Display only real available distinct images, placing the active variant's image at the top if selected
   const displayImages = useMemo(() => {
     const baseImages =
@@ -135,21 +144,21 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
         ? product.images
         : ['https://images.unsplash.com/photo-1519340333755-5072120ef3aa'];
 
-    if (activeVariant?.image) {
+    if (activeVariantImage) {
       const withoutVariantImg = baseImages.filter(
-        (img) => img !== activeVariant.image,
+        (img) => img !== activeVariantImage,
       );
-      return [activeVariant.image, ...withoutVariantImg];
+      return [activeVariantImage, ...withoutVariantImg];
     }
     return baseImages;
-  }, [product.images, activeVariant?.image]);
+  }, [product.images, activeVariantImage]);
 
   return (
-    <main className="bg-background-light pt-28 pb-16 mb-6 lg:pt-32">
+    <div className="bg-background-light pt-28 pb-16 mb-6 lg:pt-32">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-20">
         <div className="flex flex-col gap-10 lg:flex-row lg:gap-20 items-start">
           {/* Left Section: Breadcrumbs & Dynamic Image Gallery */}
-          <div className="w-full lg:w-[55%] sticky top-28">
+          <div className="w-full lg:w-[55%] lg:sticky lg:top-28">
             {/* Breadcrumbs */}
             <nav className="mb-4 flex items-center gap-0.5 text-[11px] font-medium tracking-wide text-gray-500">
               <Link className="transition-colors hover:text-primary" href="/">
@@ -310,7 +319,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                 <div className="mb-10 lg:mb-16 space-y-8">
                   {primaryDescription && (
                     <p className="font-display text-lg italic leading-relaxed text-primary sm:text-xl lg:text-2xl">
-                      "{primaryDescription}"
+                      &ldquo;{primaryDescription}&rdquo;
                     </p>
                   )}
 
@@ -327,23 +336,49 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
 
               {/* Actions: Quantity & CTA */}
               <div className="flex items-center gap-6 pt-4">
-                <div className="flex h-16 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div
+                  className={`flex h-16 items-center overflow-hidden rounded-xl border transition-all ${
+                    !isAvailable
+                      ? 'border-gray-200 bg-gray-100/80 opacity-50 cursor-not-allowed select-none'
+                      : 'border-gray-200 bg-white shadow-sm'
+                  }`}
+                  aria-disabled={!isAvailable}
+                >
                   <button
+                    type="button"
                     onClick={decrement}
-                    disabled={!isAvailable}
-                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:opacity-30"
+                    disabled={!isAvailable || quantity <= 1}
+                    aria-label="Disminuir cantidad"
+                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:opacity-30"
                   >
                     <span className="material-symbols-outlined text-sm">
                       remove
                     </span>
                   </button>
-                  <span className="font-display flex h-full w-12 items-center justify-center text-lg font-bold text-primary">
-                    {quantity}
-                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={isAvailable ? quantity : 0}
+                    onChange={(e) => {
+                      if (!isAvailable) return;
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val) && val >= 1) {
+                        setQuantity(val);
+                      } else if (e.target.value === '') {
+                        setQuantity(1);
+                      }
+                    }}
+                    disabled={!isAvailable}
+                    aria-label="Cantidad de productos"
+                    className="font-display h-full w-14 text-center text-lg font-bold text-primary bg-transparent focus:outline-none disabled:text-gray-400 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
                   <button
+                    type="button"
                     onClick={increment}
                     disabled={!isAvailable}
-                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:opacity-30"
+                    aria-label="Aumentar cantidad"
+                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:opacity-30"
                   >
                     <span className="material-symbols-outlined text-sm">
                       add
@@ -387,6 +422,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
         <button
           className="absolute right-6 top-6 z-[210] flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-all hover:bg-red-700 hover:scale-110 active:scale-95 cursor-pointer"
           onClick={() => setZoomedImage(null)}
+          aria-label="Cerrar vista ampliada"
         >
           <span className="material-symbols-outlined text-2xl font-bold">
             close
@@ -411,7 +447,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 };
 

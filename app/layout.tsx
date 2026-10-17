@@ -4,7 +4,6 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FloatingActions from "@/components/FloatingActions";
-import Script from "next/script";
 import { CartProvider } from "@/context/CartContext";
 
 const notoSerif = Noto_Serif({
@@ -91,25 +90,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${notoSerif.variable} ${notoSans.variable} antialiased`}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        />
-      </head>
-
-      <body className="min-h-screen flex flex-col font-sans selection:bg-primary/20 selection:text-primary">
-        <Script
+    <html
+      lang="es"
+      className={`${notoSerif.variable} ${notoSans.variable} antialiased`}
+      suppressHydrationWarning
+    >
+      <body
+        className="min-h-screen flex flex-col font-sans selection:bg-primary/20 selection:text-primary"
+        suppressHydrationWarning
+      >
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-lg focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-accent-gold"
+        >
+          Saltar al contenido principal
+        </a>
+        <script
           id="organization-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
         <CartProvider>
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <main id="main-content" className="flex-1 flex flex-col">
+            {children}
+          </main>
           <Footer />
           <FloatingActions />
         </CartProvider>

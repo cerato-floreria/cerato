@@ -4,6 +4,7 @@ import React, { useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { toPascalCase } from '@/lib/shopify';
+import { CartItem } from '@/lib/shopify/types';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -31,11 +32,14 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   }, [isOpen, onClose]);
 
   // Extract lines supporting edges or direct nodes
-  const lineItems = useMemo(() => {
+  const lineItems = useMemo((): CartItem[] => {
     if (!cart?.lines) return [];
-    if (Array.isArray(cart.lines)) return cart.lines;
-    if (Array.isArray((cart.lines as any).nodes)) return (cart.lines as any).nodes;
-    if (Array.isArray(cart.lines.edges)) return cart.lines.edges.map((e: any) => e.node || e);
+    if (Array.isArray(cart.lines)) return cart.lines as CartItem[];
+    const linesObj = cart.lines as unknown as { nodes?: CartItem[]; edges?: Array<{ node?: CartItem }> };
+    if (Array.isArray(linesObj.nodes)) return linesObj.nodes;
+    if (Array.isArray(linesObj.edges)) {
+      return linesObj.edges.map((e) => (e.node || e) as CartItem);
+    }
     return [];
   }, [cart]);
 
@@ -44,7 +48,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     if (typeof cart?.totalQuantity === 'number' && cart.totalQuantity > 0) {
       return cart.totalQuantity;
     }
-    return lineItems.reduce((acc: number, item: any) => acc + (item.quantity || 0), 0);
+    return lineItems.reduce((acc: number, item: CartItem) => acc + (item.quantity || 0), 0);
   }, [cart, lineItems]);
 
   // Calculate subtotal with fallbacks
@@ -57,7 +61,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       const parsed = parseFloat(cart.cost.totalAmount.amount);
       if (!isNaN(parsed) && parsed > 0) return parsed;
     }
-    return lineItems.reduce((acc: number, item: any) => {
+    return lineItems.reduce((acc: number, item: CartItem) => {
       const lineCost = item.cost?.totalAmount?.amount
         ? parseFloat(item.cost.totalAmount.amount)
         : (parseFloat(item.merchandise?.price?.amount || '0') * (item.quantity || 1));
@@ -91,10 +95,14 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
             : 'opacity-0 invisible pointer-events-none'
         }`}
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Drawer */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Carrito de compras"
         className={`fixed right-0 top-0 bottom-0 z-[130] w-full sm:w-[450px] lg:w-[33%] bg-white shadow-2xl transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
@@ -111,6 +119,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={onClose}
+            aria-label="Cerrar carrito"
             className="text-white/80 hover:text-white transition-colors cursor-pointer p-2"
           >
             <span className="material-symbols-outlined text-3xl">close</span>
@@ -130,17 +139,21 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                 </p>
               </div>
             ) : (
-              lineItems.map((item: any) => {
+              lineItems.map((item: CartItem) => {
                 const productTitle = toPascalCase(
                   item.merchandise?.product?.title ||
                     item.merchandise?.title ||
                     'Producto Floral'
                 );
-                const variantTitle = toPascalCase(
-                  item.merchandise?.title || ''
-                );
+                const rawVariantTitle = (item.merchandise?.title || '').trim();
+                const isDefaultVariant =
+                  !rawVariantTitle ||
+                  rawVariantTitle.toLowerCase() === 'default title' ||
+                  rawVariantTitle.toLowerCase() === 'default';
+
+                const variantTitle = !isDefaultVariant ? toPascalCase(rawVariantTitle) : '';
                 const displayTitle =
-                  variantTitle && variantTitle !== productTitle
+                  variantTitle && variantTitle.toLowerCase() !== productTitle.toLowerCase()
                     ? `${productTitle} – ${variantTitle}`
                     : productTitle;
                 const imageUrl =
@@ -187,6 +200,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                         <button
                           onClick={() => removeItem(item.id)}
                           disabled={isLoading}
+                          aria-label={`Eliminar ${displayTitle} del carrito`}
                           className="text-primary/30 hover:text-red-600 transition-colors p-1 -mr-1 -mt-1 cursor-pointer shrink-0 disabled:opacity-50"
                           title="Eliminar producto"
                         >
@@ -205,6 +219,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                               updateItemQuantity(item.id, (item.quantity || 1) - 1)
                             }
                             disabled={isLoading}
+                            aria-label="Disminuir cantidad"
                             className="w-7 h-7 flex items-center justify-center text-primary/60 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-40 cursor-pointer font-bold text-sm"
                           >
                             -
@@ -217,6 +232,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                               updateItemQuantity(item.id, (item.quantity || 1) + 1)
                             }
                             disabled={isLoading}
+                            aria-label="Aumentar cantidad"
                             className="w-7 h-7 flex items-center justify-center text-primary/60 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-40 cursor-pointer font-bold text-sm"
                           >
                             +

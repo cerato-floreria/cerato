@@ -11,6 +11,7 @@ interface Product {
   price: number;
   currency?: string;
   image: string;
+  availableForSale?: boolean;
 }
 
 interface ProductSectionProps {
@@ -23,8 +24,8 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products }) => {
 
   return (
     <section className="mb-20 relative">
-      {/* Sticky Section Header with Purple Glassmorphic Blur */}
-      <div className="sticky top-[70px] lg:top-[78px] z-20 mb-8 py-3.5 px-6 rounded-2xl bg-[#6B4E71]/[0.09] backdrop-blur-md border border-[#6B4E71]/15 shadow-sm flex items-center justify-between transition-all">
+      {/* Sticky Section Header with Purple Glassmorphic Blur positioned under minified filter bar */}
+      <div className="sticky top-[128px] lg:top-[124px] z-20 mb-8 py-3.5 px-6 rounded-2xl bg-[#6B4E71]/[0.09] backdrop-blur-md border border-[#6B4E71]/15 shadow-sm flex items-center justify-between transition-all">
         <div className="flex items-center gap-3 shrink-0">
           <span className="h-2 w-2 rounded-full bg-accent-gold shadow-xs"></span>
           <h3 className="font-display text-xl lg:text-2xl italic text-primary font-bold tracking-tight">
@@ -50,6 +51,7 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products }) => {
             name={product.name}
             price={product.price}
             currency={product.currency}
+            availableForSale={product.availableForSale}
           />
         ))}
       </div>

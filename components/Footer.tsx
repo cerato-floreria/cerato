@@ -158,7 +158,15 @@ const Footer = () => {
               © 2026 Cerato Arte Floral. Todos los derechos reservados.
             </p>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 text-center md:text-right">
-              Desarrollado por BlackCherry IT Consulting
+              Desarrollado por{" "}
+              <a
+                href="https://blackcherryitconsulting.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/40 hover:text-accent-gold transition-colors underline-offset-4 hover:underline cursor-pointer"
+              >
+                BlackCherry IT Consulting
+              </a>
             </p>
           </div>
         </div>

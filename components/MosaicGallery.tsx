@@ -1,65 +1,189 @@
+"use client";
+
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { CategorySubItem } from "@/lib/shopify/types";
+import { toPascalCase } from "@/lib/shopify";
 
-const MosaicGallery = () => {
-  const images = [
-    { src: "https://lh3.googleusercontent.com/aida-public/AB6AXuBv_3_bmSdtd0GnSh5EHK0u0_H56GG3Kf_w-IDOHKIyW-PPwNs_tZR-Rs7AndhnNT7ubLRmz8qDyrlrrfnj-EH2def2GiQ1GRGxUojM7JR3zdP78DT7vnUixzilHMco80LOsqm2fXJPnZjKI5eLlSl7Pbu-uPVTSPvlj_5VfgN1PyYQnSJYTZniJczRyBXhjFV64tzWezEJMtRKx8f_4xWsGtXDnzwh78Lfyc61A-AVBsf0NAx763M53ybxtEfrVUPPt9vK3AjLQw", alt: "Floral Arrangement 1", span: "col-span-1 row-span-1 aspect-square" },
-    { src: "https://lh3.googleusercontent.com/aida-public/AB6AXuAE3wTrCDgFop23cBenSXDz1C1rzyZ0ANix675D704dcbhYQZWepyQg4N1EeVZSifAwQA1-DbNn6A3vWoPUDQJBhsIkkI0_A0SbgoHm7ozgieKLFgNCfPRX64dxnDJ0Hh5b-VuX4NPTzF8WrTixexllWIdbMP9p7NPRFNWrfYheWMI2JPZJrbZBuBpzXyrEZl_QJku5QXRbfirOT78S9q2DBtqVPhrdMC2tOf7CLO7YdvVFuqNCeb0sOKqexnFXELYz09oihP4UkQ", alt: "Celebration Moment 1", span: "col-span-1 row-span-1 aspect-square" },
-    { src: "https://lh3.googleusercontent.com/aida-public/AB6AXuBAxgepMjFTHNBiD4B83cWPQ9yKeGiI2lW0WeKwFKm1TNKSg1_pUo_KuMtUJrCv7PYsLSomHIcXDIaupWvQqCIi1trVrjaCDQWLAXI2vOHgNy_TcErWXNEpc9ZY5-paFLTbvgA1azJMGGaKxA91WnAiu-8FEy99JB-Lg2yBTxbHABfCbyp4aIMFnIkU-Y_mFZ3nfJqZS9GDXMe1Al5g_YiNX5n5s8BLpQq0ZPPamesqraQLTBV8AzikpkWFDl1KgDoU0uw-GsPN4g", alt: "Indoor Plant 1", span: "col-span-1 row-span-1 aspect-square" },
-    {src: "https://lh3.googleusercontent.com/aida-public/AB6AXuAj_zA4Eyk1BXqKaTe0IAtwHC_Sq17iazaUIfZ_wdE7cBWST0UZxIdzwec5e0lIrRRwVxIvApjqV7jidiKkY3J4-O7xEyif6UpXcn2u2bTyBXcUpTK-xhDNF23nBZGdWSaaW0Rv9XQ0AEXdeCaLwRxDK_heH9gLDt4_o3SkGRBcrvtmdb0RMnfme2YnvaKDXIvZloUa-PrDxVbGdgRu_hk3DW0HleUphzbWnvWmD3uKL0rS4DbYiWdsSpombMwQZ8IQfSGI2PYjaQ", alt: "Gift Balloons 1", span: "col-span-2 row-span-1 aspect-[2/1] xl:col-span-2" },
-    { src: "https://lh3.googleusercontent.com/aida-public/AB6AXuBAxgepMjFTHNBiD4B83cWPQ9yKeGiI2lW0WeKwFKm1TNKSg1_pUo_KuMtUJrCv7PYsLSomHIcXDIaupWvQqCIi1trVrjaCDQWLAXI2vOHgNy_TcErWXNEpc9ZY5-paFLTbvgA1azJMGGaKxA91WnAiu-8FEy99JB-Lg2yBTxbHABfCbyp4aIMFnIkU-Y_mFZ3nfJqZS9GDXMe1Al5g_YiNX5n5s8BLpQq0ZPPamesqraQLTBV8AzikpkWFDl1KgDoU0uw-GsPN4g", alt: "Premium Floral Detail", span: "col-span-1 row-span-2 aspect-[1/2]" },
-    { src: "https://lh3.googleusercontent.com/aida-public/AB6AXuABiaQg9QMnR84NVTwB6ItZE4bZrhMUI5OYIc9U8joLhoRMW1mPz0OBcEHFHGtqnhIjIMhDlrtmmll7rZyCPLB11K1gWEwVis1w69g6rJ7_bRjbod9dvZpq_wq_lYerxRpv6L1uVnoPggGUuSdOk8_17EJFENtQLYvEVGemX7kYHPmpHq-bSxhCxD1NZYDh62mKSij8aeG1E7BmL22LGODFLPNOQG8x32aQP9orXWxel0JLj53imqFJYMMb3mCNJ7nR207IIvagkw", alt: "Celebration Detail", span: "col-span-1 row-span-1 aspect-square" },
-    { src: "https://lh3.googleusercontent.com/aida-public/AB6AXuD0qQvFNZ5Dus_9SmDhZIEpKZyy8omFXsqKnraqHypXtd3rFFaEGEooq4ypJzFoAILCYItWUJDb5QwqJJlCiohg0F0earIu3GOy7UqGhh0q6G8KQanyVUA4Plcz174M2YrsPFcPeaAC4YcAEOdumm7gbFCQx_qIJOKJBsP9HZyXNhu5gyueAWRHeC0qmy6a4Ox3Af1EzEzCYqjFerjCYktn19BcGZ4RzVnmFYnrty_t8sTsHvbEg8G117GHK5dgsxI4hUpsvvDfcQ", alt: "Floral Gift", span: "col-span-1 row-span-1 aspect-square" },
-    { src: "https://lh3.googleusercontent.com/aida-public/AB6AXuBZA3kbt-7LAy1pHXqim6_OkwIvMm-ycbis-l_o2gIhKpgaC8MkC7iS-jhFgCyAaUKLxW7FVywWF1Ijleu7GCiLM-cZcOSST3im_cPxtjPuIrA19nUJ7CYkVs2aVE5MvZwO9LyK-7I3c41AxJdrLOMvvKdgHuZ9G6z1oe_2jsYU5BlwrUjjvQk6fCj9vd5UZEvQmXztisMSNBukZFFIpgB5v9RjlTpNmX2XdulZmOLg-wqrcHw63qy6oQSL5JgMq-KzXjG0cQrJsg", alt: "Indoor Plant 2", span: "col-span-1 row-span-1 aspect-square" },
-    { src: "https://lh3.googleusercontent.com/aida-public/AB6AXuBv_3_bmSdtd0GnSh5EHK0u0_H56GG3Kf_w-IDOHKIyW-PPwNs_tZR-Rs7AndhnNT7ubLRmz8qDyrlrrfnj-EH2def2GiQ1GRGxUojM7JR3zdP78DT7vnUixzilHMco80LOsqm2fXJPnZjKI5eLlSl7Pbu-uPVTSPvlj_5VfgN1PyYQnSJYTZniJczRyBXhjFV64tzWezEJMtRKx8f_4xWsGtXDnzwh78Lfyc61A-AVBsf0NAx763M53ybxtEfrVUPPt9vK3AjLQw", alt: "Balloons and Flowers", span: "col-span-2 row-span-1 aspect-[2/1] xl:col-span-2" },
-  ];
+interface MosaicGalleryProps {
+  subcategories?: CategorySubItem[];
+}
+
+// 9 mosaic items matching the exact 9-slot asymmetric grid layout
+const DEFAULT_ITEMS = [
+  {
+    name: "Felicidades",
+    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image.png?v=1789105616",
+    link: "/categoria/que-quieres-decir?subtipo=Felicidades",
+  },
+  {
+    name: "Porque Sí",
+    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_192af2bf-ff48-4259-8477-128af3d4a128.png?v=1789105801",
+    link: "/categoria/que-quieres-decir?subtipo=Porque+S%C3%AD",
+  },
+  {
+    name: "Te Amo",
+    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_f6d131ee-0717-402d-810a-64ffa4ff532f.png?v=1789106189",
+    link: "/categoria/que-quieres-decir?subtipo=Te+Amo",
+  },
+  {
+    name: "Feliz Aniversario",
+    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_47b84d2e-848d-4d4b-89f9-56548634a3bf.png?v=1789106422",
+    link: "/categoria/que-quieres-decir?subtipo=Feliz+Aniversario",
+  },
+  {
+    name: "Mejórate Pronto",
+    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_2f56f0ed-83b5-4a3b-9bcf-0fce6eba1c78.png?v=1789106747",
+    link: "/categoria/que-quieres-decir?subtipo=Mej%C3%B3rate+Pronto",
+  },
+  {
+    name: "Te Acompaño",
+    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_f436fcfc-5031-4e20-9315-7b32c55ede46.png?v=1789709077",
+    link: "/categoria/que-quieres-decir?subtipo=Te+Acompa%C3%B1o",
+  },
+  {
+    name: "Gracias",
+    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_6201f723-e7a6-4dd5-8c1d-6544fbb57600.png?v=1789709190",
+    link: "/categoria/que-quieres-decir?subtipo=Gracias",
+  },
+  {
+    name: "Bienvenido Al Mundo",
+    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_74ea334a-a0f6-4bc3-8dde-21782087a460.png?v=1789710566",
+    link: "/categoria/que-quieres-decir?subtipo=Bienvenido+Al+Mundo",
+  },
+  {
+    name: "Ver Todo",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBv_3_bmSdtd0GnSh5EHK0u0_H56GG3Kf_w-IDOHKIyW-PPwNs_tZR-Rs7AndhnNT7ubLRmz8qDyrlrrfnj-EH2def2GiQ1GRGxUojM7JR3zdP78DT7vnUixzilHMco80LOsqm2fXJPnZjKI5eLlSl7Pbu-uPVTSPvlj_5VfgN1PyYQnSJYTZniJczRyBXhjFV64tzWezEJMtRKx8f_4xWsGtXDnzwh78Lfyc61A-AVBsf0NAx763M53ybxtEfrVUPPt9vK3AjLQw",
+    link: "/categoria/que-quieres-decir",
+  },
+];
+
+// Responsive layout spans:
+// - On mobile (< 768px): 2-column grid showing ALL 9 items (4 rows of 2 squares, + 1 wide bottom banner)
+// - On tablet (md: 768px - 1279px): 3-column grid showing 3x3 squares
+// - On desktop (xl: >= 1280px): the exact asymmetric mosaic (3 columns with tall and wide cards)
+const MOSAIC_CLASSES = [
+  "col-span-1 aspect-square xl:row-span-1",
+  "col-span-1 aspect-square xl:row-span-1",
+  "col-span-1 aspect-square xl:row-span-1",
+  "col-span-1 aspect-square xl:col-span-2 xl:row-span-1 xl:aspect-[2/1]",
+  "col-span-1 aspect-square xl:col-span-1 xl:row-span-2 xl:aspect-[1/2]",
+  "col-span-1 aspect-square xl:row-span-1",
+  "col-span-1 aspect-square xl:row-span-1",
+  "col-span-1 aspect-square xl:row-span-1",
+  "col-span-2 aspect-[2/1] md:col-span-1 md:aspect-square xl:col-span-2 xl:row-span-1 xl:aspect-[2/1]",
+];
+
+const MosaicGallery: React.FC<MosaicGalleryProps> = ({ subcategories = [] }) => {
+  // Build items from dynamic subcategories with fallback
+  const items = React.useMemo(() => {
+    if (subcategories && subcategories.length > 0) {
+      const dynamicList = subcategories.map((sub) => {
+        const productWithImage = sub.products.find(
+          (p) => p.featuredImage?.url || p.images?.edges?.[0]?.node?.url
+        );
+        const fallbackMatch = DEFAULT_ITEMS.find(
+          (d) => d.name.toLowerCase() === sub.type.toLowerCase()
+        );
+        const img =
+          productWithImage?.featuredImage?.url ||
+          productWithImage?.images?.edges?.[0]?.node?.url ||
+          fallbackMatch?.image ||
+          "https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=600";
+
+        return {
+          name: sub.type,
+          image: img,
+          link: `/categoria/que-quieres-decir?subtipo=${encodeURIComponent(sub.type)}`,
+        };
+      });
+
+      // Fill up to 9 items if subcategories is less than 9 to strictly preserve layout
+      while (dynamicList.length < 9) {
+        const nextDefault = DEFAULT_ITEMS[dynamicList.length];
+        if (nextDefault) {
+          dynamicList.push(nextDefault);
+        } else {
+          break;
+        }
+      }
+      return dynamicList.slice(0, 9);
+    }
+    return DEFAULT_ITEMS;
+  }, [subcategories]);
 
   return (
     <section className="purple-gradient-bg relative overflow-hidden py-16 lg:py-24">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-20">
-        <div className="flex flex-col items-center gap-24 xl:flex-row">
+        <div className="flex flex-col items-center gap-12 sm:gap-16 xl:flex-row xl:gap-24">
           {/* Header Area */}
           <div className="flex w-full flex-col items-center text-center space-y-6 xl:w-2/5 xl:items-start xl:text-left xl:pr-20">
             <span className="inline-block text-[10px] font-bold uppercase tracking-[0.4em] text-primary lg:text-xs">
               Nuestra Promesa
             </span>
             <h2 className="font-display text-4xl font-bold leading-tight text-primary md:text-5xl lg:text-[56px]">
-              Momentos <br className="hidden lg:block" /> <span className="text-accent-gold">Inolvidables</span>
+              Momentos <br className="hidden lg:block" />{" "}
+              <span className="text-accent-gold">Inolvidables</span>
             </h2>
             <p className="w-full text-base leading-relaxed text-charcoal/70 lg:text-lg">
-              Cada arreglo es una pieza única de artesanía floral. Seleccionamos las especies más vibrantes y frescas para asegurar que su mensaje perdure en el tiempo y el corazón.
+              Cada arreglo es una pieza única de artesanía floral. Seleccionamos las
+              especies más vibrantes y frescas para asegurar que su mensaje perdure
+              en el tiempo y el corazón.
             </p>
-            <div className="pt-4 lg:pt-6">
-              <Link 
-                href="/ocasiones"
-                className="group flex items-center gap-4 rounded-full bg-primary px-8 py-4 text-[10px] font-bold tracking-[0.2em] text-white shadow-xl transition-all hover:bg-primary-dark hover:-translate-y-1 lg:px-10 lg:py-5 lg:text-xs"
+            <div className="pt-2 lg:pt-4">
+              <Link
+                href="/categoria/que-quieres-decir"
+                className="group flex items-center gap-4 rounded-full bg-primary px-8 py-4 text-[10px] font-bold tracking-[0.2em] text-white shadow-xl transition-all hover:bg-primary-dark hover:-translate-y-1 lg:px-10 lg:py-5 lg:text-xs cursor-pointer"
               >
                 VER CATÁLOGO DE OCASIONES
-                <span className="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">shopping_cart</span>
+                <span className="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">
+                  shopping_cart
+                </span>
               </Link>
             </div>
           </div>
 
-          {/* Mosaic Grid Area */}
+          {/* Asymmetric Mosaic Grid Area showing all photos across mobile and desktop */}
           <div className="w-full xl:w-3/5 mx-auto max-w-4xl xl:max-w-none">
             <div className="asymmetric-mosaic">
-              {images.map((img, idx) => (
-                <div 
-                  key={idx} 
-                  className={`group relative cursor-pointer overflow-hidden rounded-xl bg-cream shadow-lg transition-all hover:shadow-2xl ${img.span} ${idx >= 2 ? 'hidden xl:block' : 'block'} ${idx === 0 ? '-translate-y-8 xl:translate-y-0' : ''} ${idx === 1 ? 'translate-y-8 xl:translate-y-0' : ''}`}
-                >
-                  <Image 
-                    src={img.src} 
-                    alt={img.alt} 
-                    fill
-                    className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
-                    sizes="(max-width: 768px) 50vw, 33vw"
-                  />
-                </div>
-              ))}
+              {items.map((sub, idx) => {
+                const displayName = toPascalCase(sub.name);
+                const spanClass = MOSAIC_CLASSES[idx] || "col-span-1 aspect-square";
+
+                return (
+                  <Link
+                    key={`${sub.name}-${idx}`}
+                    href={sub.link}
+                    className={`group relative block cursor-pointer overflow-hidden rounded-xl bg-cream shadow-md transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${spanClass}`}
+                    title={`Ver arreglos para ${displayName}`}
+                  >
+                    {/* Background Image: blur effect completely disappears on hover */}
+                    <Image
+                      src={sub.image}
+                      alt={displayName}
+                      fill
+                      className="mosaic-card-image h-full w-full object-cover"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1280px) 50vw, 33vw"
+                    />
+
+                    {/* Darkening Overlay: becomes clear on hover */}
+                    <div className="mosaic-card-overlay absolute inset-0" />
+
+                    {/* Centered Subcategory Label */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-3 sm:p-4 text-center z-10 pointer-events-none">
+                      <span className="font-display text-xs sm:text-sm lg:text-base xl:text-lg font-bold uppercase tracking-wider text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] transition-all duration-300 group-hover:scale-105 group-hover:text-accent-gold">
+                        {displayName}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] font-sans font-semibold uppercase tracking-[0.2em] text-white/95 mt-1 sm:mt-1.5 opacity-0 transition-all duration-300 group-hover:opacity-100 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                        Explorar →
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
-
         </div>
       </div>
     </section>
