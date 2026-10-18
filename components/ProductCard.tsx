@@ -144,7 +144,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* View Product CTA Button */}
         <span className="w-full block text-center rounded-lg bg-white/95 py-2.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary transition-all group-hover:bg-accent-gold group-hover:text-white shadow-md backdrop-blur-sm">
-          {!availableForSale ? 'Agotado • Ver Detalles' : 'Ver Detalles'}
+          Ver Detalles
         </span>
       </div>
     </Link>

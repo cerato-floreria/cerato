@@ -61,6 +61,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     ? activeVariant.availableForSale
     : product.availableForSale !== false;
 
+  const categoryDisplay = useMemo(() => {
+    const raw = product.category || product.tag || 'Arte Floral Cerato';
+    return raw.replace(/^(cat\d*|type\d*):\s*/i, '').trim();
+  }, [product.category, product.tag]);
+
   const hasMultipleVariants = useMemo(() => {
     if (!product.variants || product.variants.length <= 1) return false;
     if (
@@ -310,12 +315,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
           {/* Right Section: Product Info */}
           <div className="flex flex-col justify-center py-6 w-full lg:w-[45%]">
             <div className="max-w-md">
-              {/* Tag & Availability Badge */}
-              <div className="flex items-center gap-3 mb-6">
+              {/* Category */}
+              <div className="mb-6">
                 <span className="block text-[10px] font-bold uppercase tracking-[0.4em] text-gray-500">
-                  {product.tag || 'Arte Floral Cerato'}
+                  {categoryDisplay}
                 </span>
-                {!isAvailable && <SoldOutBadge />}
               </div>
 
               {/* Title - PascalCase */}

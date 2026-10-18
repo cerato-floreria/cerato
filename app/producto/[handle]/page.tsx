@@ -104,7 +104,7 @@ export default async function ProductHandlePage({ params, searchParams }: PagePr
     category: matchedCategory,
     categories: product.categories || [],
     fromCategorySlug: fromParam,
-    tag: product.tags?.[0] || "Edición Limitada",
+    tag: matchedCategory,
     description: product.description,
     longDescription: product.description,
     availableForSale: product.availableForSale ?? true,
