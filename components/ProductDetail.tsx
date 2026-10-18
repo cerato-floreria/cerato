@@ -3,8 +3,10 @@
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-import { toPascalCase } from '@/lib/shopify';
+import { toPascalCase, slugifyCategory } from '@/lib/shopify';
+import SoldOutBadge from './SoldOutBadge';
 
 export interface ProductVariantItem {
   id: string;
@@ -24,6 +26,8 @@ interface ProductDetailProps {
     price: number | string;
     currency: string;
     category: string;
+    categories?: string[];
+    fromCategorySlug?: string;
     tag?: string;
     description: string;
     longDescription?: string;
@@ -69,11 +73,52 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     return true;
   }, [product.variants]);
 
+  const searchParams = useSearchParams();
+  const fromParam =
+    searchParams.get('from') ||
+    searchParams.get('cat') ||
+    product.fromCategorySlug;
+
+  const resolvedCategory = useMemo(() => {
+    if (fromParam) {
+      const decodedFrom = decodeURIComponent(fromParam).toLowerCase().trim();
+      // Match against product.categories if available
+      if (product.categories && product.categories.length > 0) {
+        const found = product.categories.find(
+          (c) => slugifyCategory(c) === decodedFrom
+        );
+        if (found) return found;
+      }
+      // If product.category matches
+      if (product.category && slugifyCategory(product.category) === decodedFrom) {
+        return product.category;
+      }
+      // Friendly mappings for category slugs
+      if (decodedFrom === 'que-quieres-decir') return '¿Qué quieres decir?';
+      if (decodedFrom === 'flores-y-plantas') return 'Flores y Plantas';
+      if (decodedFrom === 'ocasiones') return 'Ocasiones';
+    }
+    return product.category || 'Flores y Plantas';
+  }, [fromParam, product.categories, product.category]);
+
   const displayName = useMemo(() => toPascalCase(product.name), [product.name]);
   const displayCategory = useMemo(
-    () => toPascalCase(product.category || 'Colección Cerato'),
-    [product.category],
+    () => toPascalCase(resolvedCategory),
+    [resolvedCategory],
   );
+
+  const categorySlug = useMemo(() => {
+    if (fromParam) {
+      return decodeURIComponent(fromParam).toLowerCase().trim();
+    }
+    const slug = slugifyCategory(resolvedCategory);
+    if (!slug || slug === 'coleccion-cerato') {
+      return 'flores-y-plantas';
+    }
+    return slug;
+  }, [fromParam, resolvedCategory]);
+
+  const catalogUrl = `/categoria/${categorySlug}`;
 
   // Split description at the first period:
   // Part 1 -> Main italic quote (first sentence)
@@ -156,23 +201,52 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
   return (
     <div className="bg-background-light pt-28 pb-16 mb-6 lg:pt-32">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-20">
+        {/* Top Navigation Bar: Back to Catalog Button & Clickable Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-primary/5">
+          <Link
+            href={catalogUrl}
+            className="group inline-flex items-center gap-2 rounded-xl border border-primary/10 bg-white/90 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary shadow-xs backdrop-blur-sm transition-all hover:border-accent-gold hover:bg-white hover:text-accent-gold hover:shadow-md active:scale-95 cursor-pointer"
+            aria-label={`Regresar al catálogo de ${displayCategory}`}
+          >
+            <span className="material-symbols-outlined text-lg transition-transform group-hover:-translate-x-1">
+              arrow_back
+            </span>
+            <span>Volver al Catálogo</span>
+          </Link>
+
+          {/* Clickable Breadcrumbs */}
+          <nav
+            aria-label="Ruta de navegación"
+            className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-gray-500"
+          >
+            <Link
+              className="transition-colors hover:text-primary hover:underline underline-offset-2"
+              href="/"
+            >
+              Inicio
+            </Link>
+            <span className="material-symbols-outlined text-[13px] text-gray-400">
+              chevron_right
+            </span>
+            <Link
+              href={catalogUrl}
+              className="transition-colors hover:text-primary hover:underline underline-offset-2 font-medium"
+              title={`Ver catálogo de ${displayCategory}`}
+            >
+              {displayCategory}
+            </Link>
+            <span className="material-symbols-outlined text-[13px] text-gray-400">
+              chevron_right
+            </span>
+            <span className="font-bold text-primary truncate max-w-[150px] sm:max-w-[260px] md:max-w-none">
+              {displayName}
+            </span>
+          </nav>
+        </div>
+
         <div className="flex flex-col gap-10 lg:flex-row lg:gap-20 items-start">
-          {/* Left Section: Breadcrumbs & Dynamic Image Gallery */}
+          {/* Left Section: Dynamic Image Gallery */}
           <div className="w-full lg:w-[55%] lg:sticky lg:top-28">
-            {/* Breadcrumbs */}
-            <nav className="mb-4 flex items-center gap-0.5 text-[11px] font-medium tracking-wide text-gray-500">
-              <Link className="transition-colors hover:text-primary" href="/">
-                Inicio
-              </Link>
-              <span className="material-symbols-outlined text-[10px]">
-                chevron_right
-              </span>
-              <span className="text-gray-500">{displayCategory}</span>
-              <span className="material-symbols-outlined text-[10px]">
-                chevron_right
-              </span>
-              <span className="font-bold text-primary">{displayName}</span>
-            </nav>
 
             {/* Dynamic Gallery: Adaptive for 1 image or multiple images */}
             {displayImages.length === 1 ? (
@@ -194,6 +268,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                       fullscreen
                     </span>
                   </div>
+                  {!isAvailable && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <SoldOutBadge />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -217,6 +296,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                         fullscreen
                       </span>
                     </div>
+                    {!isAvailable && idx === 0 && (
+                      <div className="absolute top-3.5 right-3.5 z-10">
+                        <SoldOutBadge />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -231,11 +315,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                 <span className="block text-[10px] font-bold uppercase tracking-[0.4em] text-gray-500">
                   {product.tag || 'Arte Floral Cerato'}
                 </span>
-                {!isAvailable && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[9px] font-bold uppercase tracking-wider">
-                    Agotado
-                  </span>
-                )}
+                {!isAvailable && <SoldOutBadge />}
               </div>
 
               {/* Title - PascalCase */}

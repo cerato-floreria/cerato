@@ -7,6 +7,7 @@ import { getProductsAction } from '@/app/actions/shopify';
 import { buildTaxonomy } from '@/lib/shopify';
 import { ShopifyProduct } from '@/lib/shopify/types';
 import { useCart } from '@/context/CartContext';
+import SoldOutBadge from './SoldOutBadge';
 
 const FeaturedProducts = () => {
   const [featured, setFeatured] = useState<ShopifyProduct[]>([]);
@@ -132,11 +133,8 @@ const FeaturedProducts = () => {
 
                       {/* Out of Stock Badge */}
                       {product.availableForSale === false && (
-                        <div className="absolute top-4 right-4 z-20">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[9px] font-bold tracking-wider text-white uppercase shadow-md backdrop-blur-md border border-white/10">
-                            <span className="h-1.5 w-1.5 rounded-full bg-red-400"></span>
-                            Agotado
-                          </span>
+                        <div className="absolute top-4 right-4 z-10">
+                          <SoldOutBadge />
                         </div>
                       )}
                     </Link>
@@ -157,11 +155,8 @@ const FeaturedProducts = () => {
 
                       {/* Out of Stock Badge for inactive item */}
                       {product.availableForSale === false && (
-                        <div className="absolute top-4 right-4 z-20">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[9px] font-bold tracking-wider text-white uppercase shadow-md backdrop-blur-md border border-white/10">
-                            <span className="h-1.5 w-1.5 rounded-full bg-red-400"></span>
-                            Agotado
-                          </span>
+                        <div className="absolute top-4 right-4 z-10">
+                          <SoldOutBadge />
                         </div>
                       )}
                     </button>

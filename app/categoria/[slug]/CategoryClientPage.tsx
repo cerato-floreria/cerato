@@ -5,6 +5,7 @@ import ProductFilters from "@/components/ProductFilters";
 import MinifiedProductFilters from "@/components/MinifiedProductFilters";
 import ProductSection from "@/components/ProductSection";
 import { CategorySubItem, ShopifyProduct } from "@/lib/shopify/types";
+import { slugifyCategory } from "@/lib/shopify";
 
 interface CategoryClientPageProps {
   categoryName: string;
@@ -27,6 +28,11 @@ export default function CategoryClientPage({
     );
     return matched ? matched.type : initialSubtype;
   }, [subtypes, initialSubtype]);
+
+  const currentCategorySlug = useMemo(
+    () => slugifyCategory(categoryName),
+    [categoryName]
+  );
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubtype, setSelectedSubtype] = useState(resolvedInitialSubtype);
@@ -230,6 +236,7 @@ export default function CategoryClientPage({
               key={section.title}
               title={section.title}
               products={section.products}
+              categorySlug={currentCategorySlug}
             />
           ))
         ) : (

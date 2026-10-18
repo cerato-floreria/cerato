@@ -17,15 +17,16 @@ interface Product {
 interface ProductSectionProps {
   title: string;
   products: Product[];
+  categorySlug?: string;
 }
 
-const ProductSection: React.FC<ProductSectionProps> = ({ title, products }) => {
+const ProductSection: React.FC<ProductSectionProps> = ({ title, products, categorySlug }) => {
   const displayTitle = toPascalCase(title);
 
   return (
     <section className="mb-20 relative">
       {/* Sticky Section Header with Purple Glassmorphic Blur positioned under minified filter bar */}
-      <div className="sticky top-[128px] lg:top-[124px] z-20 mb-8 py-3.5 px-6 rounded-2xl bg-[#6B4E71]/[0.09] backdrop-blur-md border border-[#6B4E71]/15 shadow-sm flex items-center justify-between transition-all">
+      <div className="sticky top-[128px] lg:top-[124px] z-30 mb-8 py-3.5 px-6 rounded-2xl bg-[#6B4E71]/[0.09] backdrop-blur-md border border-[#6B4E71]/15 shadow-sm flex items-center justify-between transition-all">
         <div className="flex items-center gap-3 shrink-0">
           <span className="h-2 w-2 rounded-full bg-accent-gold shadow-xs"></span>
           <h3 className="font-display text-xl lg:text-2xl italic text-primary font-bold tracking-tight">
@@ -41,7 +42,7 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products }) => {
       </div>
 
       {/* Product Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 relative z-10">
         {products.map((product, index) => (
           <ProductCard
             key={`${product.id}-${index}`}
@@ -52,6 +53,7 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products }) => {
             price={product.price}
             currency={product.currency}
             availableForSale={product.availableForSale}
+            categorySlug={categorySlug}
           />
         ))}
       </div>

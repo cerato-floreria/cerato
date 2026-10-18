@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { getProductsAction } from "@/app/actions/shopify";
 import { buildTaxonomy, slugifyCategory, toPascalCase } from "@/lib/shopify";
 import { NavigationCategory } from "@/lib/shopify/types";
@@ -39,15 +40,14 @@ const Footer = () => {
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-16">
           {/* Brand Column */}
           <div className="flex flex-col gap-6">
-            <Link href="/" className="flex items-center gap-4 group/logo">
-              <div className="text-white transition-transform duration-300 group-hover/logo:scale-110">
-                <svg className="h-8 w-8 lg:h-9 lg:w-9" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor" />
-                </svg>
-              </div>
-              <h2 className="font-display text-2xl font-bold uppercase tracking-[0.2em] text-white">
-                Cerato
-              </h2>
+            <Link href="/" className="inline-block group/logo">
+              <Image
+                src="/Logo-Color-2.png"
+                alt="Cerato Arte Floral"
+                width={200}
+                height={95}
+                className="h-14 sm:h-16 w-auto object-contain transition-transform duration-300 group-hover/logo:scale-105"
+              />
             </Link>
             <p className="max-w-xs text-sm font-light leading-relaxed text-white/50">
               Elevando el arte de regalar a través de la naturaleza. Especialistas en diseño floral de alta gama para las ocasiones más exigentes.

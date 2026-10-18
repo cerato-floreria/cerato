@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { toPascalCase } from '@/lib/shopify';
+import SoldOutBadge from './SoldOutBadge';
 
 interface ProductCardProps {
   id: string;
@@ -13,6 +14,7 @@ interface ProductCardProps {
   currency?: string;
   image: string;
   availableForSale?: boolean;
+  categorySlug?: string;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -22,6 +24,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   price,
   image,
   availableForSale = true,
+  categorySlug,
 }) => {
   const targetSlug = handle || id;
   const displayName = useMemo(() => toPascalCase(name), [name]);
@@ -70,9 +73,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
     setIsHovered(false);
   };
 
+  const productHref = categorySlug
+    ? `/producto/${targetSlug}?from=${encodeURIComponent(categorySlug)}`
+    : `/producto/${targetSlug}`;
+
   return (
     <Link
-      href={`/producto/${targetSlug}`}
+      href={productHref}
       className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-cream border border-primary/5 shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 active:scale-[0.98]"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -88,11 +95,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Out of Stock Badge */}
       {!availableForSale && (
-        <div className="absolute top-3.5 right-3.5 z-20">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-[9px] font-bold tracking-wider text-white uppercase shadow-md backdrop-blur-md border border-white/10">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-400"></span>
-            Agotado
-          </span>
+        <div className="absolute top-3.5 right-3.5 z-10">
+          <SoldOutBadge />
         </div>
       )}
 

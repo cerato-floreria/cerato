@@ -1,12 +1,13 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { getProductByHandle, getAllProducts, toPascalCase } from "@/lib/shopify";
+import { getProductByHandle, getAllProducts, toPascalCase, slugifyCategory } from "@/lib/shopify";
 import ProductDetail from "@/components/ProductDetail";
 import Script from "next/script";
 import { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{ handle: string }>;
+  searchParams?: Promise<{ from?: string; cat?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -46,12 +47,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ProductHandlePage({ params }: PageProps) {
+export default async function ProductHandlePage({ params, searchParams }: PageProps) {
   const { handle } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const fromParam = resolvedSearchParams.from || resolvedSearchParams.cat;
   const product = await getProductByHandle(handle);
 
   if (!product) {
     notFound();
+  }
+
+  // Resolve category based on where user came from, if available
+  let matchedCategory = product.categories?.[0] || "Colección Cerato";
+  if (fromParam && product.categories && product.categories.length > 0) {
+    const found = product.categories.find(
+      (c) => slugifyCategory(c) === fromParam.toLowerCase()
+    );
+    if (found) {
+      matchedCategory = found;
+    }
   }
 
   const titleFormatted = toPascalCase(product.title);
@@ -87,7 +101,9 @@ export default async function ProductHandlePage({ params }: PageProps) {
       ? parseFloat(product.priceRange.minVariantPrice.amount)
       : 0,
     currency: product.priceRange?.minVariantPrice?.currencyCode || "MXN",
-    category: product.categories?.[0] || "Colección Cerato",
+    category: matchedCategory,
+    categories: product.categories || [],
+    fromCategorySlug: fromParam,
     tag: product.tags?.[0] || "Edición Limitada",
     description: product.description,
     longDescription: product.description,

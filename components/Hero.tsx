@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { getProductsAction } from '@/app/actions/shopify';
 import { ShopifyProduct } from '@/lib/shopify/types';
 import { toPascalCase } from '@/lib/shopify';
+import SoldOutBadge from './SoldOutBadge';
 
 interface HeroProps {
   initialProducts?: ShopifyProduct[];
@@ -219,9 +220,7 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
                                   </>
                                 )}
                                 {!product.availableForSale && (
-                                  <span className="ml-1 rounded-full bg-black/65 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">
-                                    Agotado
-                                  </span>
+                                  <SoldOutBadge size="sm" className="ml-1" />
                                 )}
                               </div>
                             </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import CartDrawer from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
@@ -21,6 +22,10 @@ function toPascalCase(str: string): string {
     })
     .join("");
 }
+
+const SHOPIFY_DOMAIN =
+  process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'cerato-arte-floral.myshopify.com';
+const ACCOUNT_LOGIN_URL = `https://${SHOPIFY_DOMAIN}/account/login`;
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -110,15 +115,15 @@ const Navbar = () => {
       <header className={`fixed top-0 left-0 right-0 z-[100] w-full px-6 transition-all duration-500 ${headerStyle}`}>
         <div className="mx-auto flex max-w-[1440px] items-center justify-between lg:px-14">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group/logo shrink-0" onClick={() => setIsMobileMenuOpen(false)}>
-            <div className="text-white transition-transform duration-300 group-hover/logo:scale-110">
-              <svg className="w-8 h-8 lg:w-9 lg:h-9" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
-              </svg>
-            </div>
-            <span className="font-display text-xl font-bold uppercase tracking-[0.25em] text-white">
-              Cerato
-            </span>
+          <Link href="/" className="flex items-center group/logo shrink-0" onClick={() => setIsMobileMenuOpen(false)}>
+            <Image
+              src="/Logo-Color-2.png"
+              alt="Cerato Arte Floral"
+              width={160}
+              height={75}
+              priority
+              className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover/logo:scale-105"
+            />
           </Link>
 
           {/* Desktop Dynamic Navigation derived from cat: & cat2: tags */}
@@ -190,7 +195,7 @@ const Navbar = () => {
                                   <li key={prod.id}>
                                     <Link
                                       className="text-[13px] text-charcoal/75 hover:text-primary hover:translate-x-1 transition-all font-medium block truncate"
-                                      href={`/producto/${prod.handle}`}
+                                      href={`/producto/${prod.handle}?from=${slugifyCategory(cat.name)}`}
                                       onClick={() => setActiveMenu(null)}
                                     >
                                       {toPascalCase(prod.title)}
@@ -215,8 +220,19 @@ const Navbar = () => {
             })}
           </nav>
 
-          {/* Action Icons: Cart & Mobile Menu Toggle */}
-          <div className="flex items-center gap-2 lg:gap-4 shrink-0">
+          {/* Action Icons: Account, Cart & Mobile Menu Toggle */}
+          <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 shrink-0">
+            {/* Account / Login Link */}
+            <a
+              href={ACCOUNT_LOGIN_URL}
+              className="relative flex items-center justify-center h-10 w-10 text-white hover:text-accent-gold transition-colors"
+              aria-label="Iniciar sesión en tu cuenta de Cerato Floral"
+              title="Iniciar sesión / Mi cuenta"
+            >
+              <span className="material-symbols-outlined text-2xl">person</span>
+            </a>
+
+            {/* Cart Button */}
             <button
               onClick={openCart}
               className="relative flex items-center justify-center h-10 w-10 text-white hover:text-accent-gold transition-colors cursor-pointer"
@@ -263,11 +279,14 @@ const Navbar = () => {
       >
         <div className="flex flex-col h-full overflow-y-auto">
           <div className="flex items-center justify-between p-6 border-b border-white/5 bg-primary/80 backdrop-blur-md sticky top-0 z-10">
-            <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                <path d="M44 4H30.6666V17.3334H17.3334V30.6666H4V44H44V4Z" fill="currentColor"></path>
-              </svg>
-              <span className="font-display text-sm font-bold uppercase tracking-[0.2em] text-white">Cerato</span>
+            <Link href="/" className="flex items-center" onClick={() => setIsMobileMenuOpen(false)}>
+              <Image
+                src="/Logo-Color-2.png"
+                alt="Cerato Arte Floral"
+                width={130}
+                height={60}
+                className="h-9 w-auto object-contain"
+              />
             </Link>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
@@ -301,6 +320,18 @@ const Navbar = () => {
                 </li>
               ))}
             </ul>
+
+            {/* Account Link in Mobile Drawer */}
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <a
+                href={ACCOUNT_LOGIN_URL}
+                className="flex items-center gap-3 text-sm font-bold uppercase tracking-wider text-white/90 hover:text-accent-gold transition-colors py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className="material-symbols-outlined text-2xl text-accent-gold">person</span>
+                <span>Mi Cuenta / Iniciar Sesión</span>
+              </a>
+            </div>
           </nav>
         </div>
       </div>

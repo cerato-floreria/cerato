@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { SeasonalCollectionData, ShopifyProduct } from '@/lib/shopify/types';
 import { toPascalCase } from '@/lib/shopify';
 import { useCart } from '@/context/CartContext';
+import SoldOutBadge from './SoldOutBadge';
 
 interface SeasonalSectionProps {
   collection: SeasonalCollectionData | null;
@@ -127,9 +128,7 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
                   {/* Out of stock badge if not available */}
                   {!product.availableForSale && (
                     <div className="absolute top-3.5 right-3.5 z-10">
-                      <span className="inline-flex items-center rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[8px] font-bold tracking-wider text-white uppercase">
-                        Agotado
-                      </span>
+                      <SoldOutBadge />
                     </div>
                   )}
                 </Link>
