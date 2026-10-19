@@ -37,7 +37,7 @@ interface ProductDetailProps {
   };
 }
 
-const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
+const ProductDetailContent: React.FC<ProductDetailProps> = ({ product }) => {
   const initialVariantId =
     product.variants?.[0]?.id || product.variantId || product.id || '';
   const [selectedVariantId, setSelectedVariantId] =
@@ -532,6 +532,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
         </div>
       </div>
     </div>
+  );
+};
+
+const ProductDetail: React.FC<ProductDetailProps> = (props) => {
+  return (
+    <React.Suspense fallback={null}>
+      <ProductDetailContent {...props} />
+    </React.Suspense>
   );
 };
 

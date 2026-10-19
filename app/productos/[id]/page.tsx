@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { allProducts } from "@/data/products";
 import ProductDetail from "@/components/ProductDetail";
 import { notFound } from "next/navigation";
@@ -47,7 +47,9 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <div className="bg-background-light">
-      <ProductDetail product={product} />
+      <Suspense fallback={null}>
+        <ProductDetail product={product} />
+      </Suspense>
     </div>
   );
 }

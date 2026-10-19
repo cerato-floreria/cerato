@@ -145,7 +145,9 @@ export default async function ProductHandlePage({ params, searchParams }: PagePr
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
       />
-      <ProductDetail product={formattedProduct} />
+      <React.Suspense fallback={null}>
+        <ProductDetail product={formattedProduct} />
+      </React.Suspense>
     </div>
   );
 }

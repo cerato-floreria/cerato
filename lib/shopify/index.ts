@@ -81,7 +81,13 @@ export async function shopifyFetch<T>({
         status: result.status,
         body: body.data,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      if (
+        (error as { digest?: string })?.digest === 'DYNAMIC_SERVER_USAGE' ||
+        (error as Error)?.message?.includes('Dynamic server usage')
+      ) {
+        throw error;
+      }
       attempt++;
       if (attempt >= maxAttempts) {
         console.error('Shopify fetch failed after max retries:', error);
@@ -356,7 +362,7 @@ export async function getSeasonalCollection(): Promise<SeasonalCollectionData | 
   }>({
     query: getCollectionsQuery,
     tags: ['collections'],
-    cache: 'no-store',
+    cache: 'force-cache',
   });
 
   if (response?.body?.collections?.edges) {
