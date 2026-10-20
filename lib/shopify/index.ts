@@ -292,9 +292,11 @@ export function toPascalCase(str: string): string {
     .split(/([\s-_/()]+)/)
     .map((word) => {
       if (!word) return '';
-      if (word === 'xl') return 'XL';
-      if (word === 'xxl') return 'XXL';
-      return word.charAt(0).toUpperCase() + word.slice(1);
+      const clean = word.replace(/\P{L}/gu, '');
+      if (clean === 'xl') return word.replace(/xl/i, 'XL');
+      if (clean === 'xxl') return word.replace(/xxl/i, 'XXL');
+      // Capitalize the first Unicode letter, preserving leading punctuation like ¿, ¡, (, ", etc.
+      return word.replace(/^(\P{L}*)(\p{L})/u, (_, p1, p2) => p1 + p2.toUpperCase());
     })
     .join('');
 }

@@ -63,18 +63,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const setDeliveryNotes = useCallback((notes: string) => {
-    const clean = sanitizeOrderText(notes, 500);
-    setDeliveryNotesState(clean);
+    const value = typeof notes === "string" ? notes.slice(0, 500) : "";
+    setDeliveryNotesState(value);
     try {
-      localStorage.setItem("cerato_delivery_notes", clean);
+      localStorage.setItem("cerato_delivery_notes", value);
     } catch {}
   }, []);
 
   const setCardMessage = useCallback((msg: string) => {
-    const clean = sanitizeOrderText(msg, 500);
-    setCardMessageState(clean);
+    const value = typeof msg === "string" ? msg.slice(0, 500) : "";
+    setCardMessageState(value);
     try {
-      localStorage.setItem("cerato_card_message", clean);
+      localStorage.setItem("cerato_card_message", value);
     } catch {}
   }, []);
 

@@ -7,21 +7,8 @@ import { usePathname } from "next/navigation";
 import CartDrawer from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
 import { getProductsAction } from "@/app/actions/shopify";
-import { buildTaxonomy, slugifyCategory } from "@/lib/shopify";
+import { buildTaxonomy, slugifyCategory, toPascalCase } from "@/lib/shopify";
 import { NavigationCategory } from "@/lib/shopify/types";
-
-function toPascalCase(str: string): string {
-  if (!str) return "";
-  return str
-    .toLowerCase()
-    .split(/([\s-_/()]+)/)
-    .map((word) => {
-      if (!word) return "";
-      if (word === "xl") return "XL";
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    })
-    .join("");
-}
 
 const SHOPIFY_DOMAIN =
   process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'cerato-arte-floral.myshopify.com';
