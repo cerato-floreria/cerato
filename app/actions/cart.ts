@@ -4,10 +4,30 @@ import {
   createCart,
   addToCart,
   updateCartQuantity,
+  updateCartLines,
+  updateCartAttributes,
   removeFromCart,
   getCart
 } from "@/lib/shopify";
 import { Cart } from "@/lib/shopify/types";
+import { sanitizeOrderText, isValidShopifyId } from "@/lib/security";
+
+export interface SaveCartNotesParams {
+  cartId: string;
+  deliveryNotes?: string;
+  cardMessage?: string;
+  lineAttributes?: Array<{
+    lineId: string;
+    quantity?: number;
+    attributes: Array<{ key: string; value: string }>;
+  }>;
+}
+
+export interface SaveCartNotesResult {
+  success: boolean;
+  cart: Cart | null;
+  error?: string;
+}
 
 export async function createCartAction(
   variantId?: string,
@@ -80,5 +100,119 @@ export async function getCartAction(cartId: string): Promise<Cart | null> {
   } catch (error) {
     console.error("Error fetching cart:", error);
     return null;
+  }
+}
+
+export async function saveCartNotesAction(
+  params: SaveCartNotesParams
+): Promise<SaveCartNotesResult> {
+  try {
+    const { cartId, deliveryNotes = "", cardMessage = "", lineAttributes = [] } = params;
+
+    // 1. Strict ID format validation to prevent injection
+    if (!cartId || !isValidShopifyId(cartId)) {
+      return { success: false, cart: null, error: "Identificador de carrito inválido." };
+    }
+
+    // 2. Strict text sanitization: strip script/HTML tags, bidi characters, null bytes, collapse newlines, cap length
+    const cleanDeliveryNotes = sanitizeOrderText(deliveryNotes, 500);
+    const cleanCardMessage = sanitizeOrderText(cardMessage, 500);
+
+    const attributes: Array<{ key: string; value: string }> = [];
+    if (cleanDeliveryNotes) {
+      attributes.push({ key: "Instrucciones de entrega", value: cleanDeliveryNotes });
+    }
+    if (cleanCardMessage) {
+      attributes.push({ key: "Dedicatoria para la tarjeta", value: cleanCardMessage });
+    }
+
+    // Summary note for Shopify Admin Order details
+    const noteParts: string[] = [];
+    if (cleanDeliveryNotes) {
+      noteParts.push(`Instrucciones de entrega: ${cleanDeliveryNotes}`);
+    }
+    if (cleanCardMessage) {
+      noteParts.push(`Dedicatoria para la tarjeta: ${cleanCardMessage}`);
+    }
+    const combinedNote = noteParts.join(" | ");
+
+    let currentCart: Cart | null = null;
+
+    // 3. Sanitize and validate line item attributes
+    const validLineUpdates: Array<{
+      lineId: string;
+      quantity?: number;
+      attributes: Array<{ key: string; value: string }>;
+    }> = [];
+
+    for (const item of lineAttributes) {
+      if (!item.lineId || !isValidShopifyId(item.lineId)) continue;
+
+      const cleanItemAttrs: Array<{ key: string; value: string }> = [];
+      for (const attr of item.attributes || []) {
+        const cleanKey = sanitizeOrderText(attr.key, 50);
+        const cleanVal = sanitizeOrderText(attr.value, 500);
+        if (cleanKey && cleanVal) {
+          cleanItemAttrs.push({ key: cleanKey, value: cleanVal });
+        }
+      }
+
+      if (cleanItemAttrs.length > 0) {
+        validLineUpdates.push({
+          lineId: item.lineId,
+          quantity: item.quantity,
+          attributes: cleanItemAttrs
+        });
+      }
+    }
+
+    if (validLineUpdates.length > 0) {
+      const lineRes = await updateCartLines(
+        cartId,
+        validLineUpdates.map((la) => ({
+          id: la.lineId,
+          quantity: la.quantity,
+          attributes: la.attributes
+        }))
+      );
+      if (lineRes.userErrors && lineRes.userErrors.length > 0) {
+        console.error("Error saving line attributes in Shopify:", lineRes.userErrors);
+        return {
+          success: false,
+          cart: null,
+          error: lineRes.userErrors[0]?.message || "Error al guardar la dedicatoria del producto."
+        };
+      }
+      currentCart = lineRes.cart;
+    }
+
+    // 4. Update cart attributes and note in Shopify
+    if (attributes.length > 0 || combinedNote) {
+      const attrRes = await updateCartAttributes(cartId, attributes, combinedNote);
+      if (attrRes.userErrors && attrRes.userErrors.length > 0) {
+        console.error("Error saving cart attributes in Shopify:", attrRes.userErrors);
+        return {
+          success: false,
+          cart: currentCart,
+          error: attrRes.userErrors[0]?.message || "Error al guardar las notas del pedido en Shopify."
+        };
+      }
+      if (attrRes.cart) {
+        currentCart = attrRes.cart;
+      }
+    }
+
+    if (!currentCart) {
+      currentCart = await getCart(cartId);
+    }
+
+    return { success: true, cart: currentCart };
+  } catch (error) {
+    console.error("Error in saveCartNotesAction:", error);
+    return {
+      success: false,
+      cart: null,
+      error: "Hubo un error de conexión al guardar los detalles en Shopify. Por favor intenta de nuevo."
+    };
   }
 }

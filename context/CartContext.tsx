@@ -1,13 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Cart } from "@/lib/shopify/types";
 import {
   addToCartAction,
   updateCartItemAction,
   removeFromCartAction,
-  getCartAction
+  getCartAction,
+  saveCartNotesAction
 } from "@/app/actions/cart";
+import { sanitizeOrderText } from "@/lib/security";
 
 interface CartContextType {
   cart: Cart | null;
@@ -20,6 +22,16 @@ interface CartContextType {
   updateItemQuantity: (lineId: string, quantity: number) => Promise<void>;
   removeItem: (lineId: string) => Promise<void>;
   checkoutUrl: string | null;
+  // Delivery & Dedication fields (Order-level)
+  deliveryNotes: string;
+  setDeliveryNotes: (notes: string) => void;
+  cardMessage: string;
+  setCardMessage: (msg: string) => void;
+  saveNotesAndProceedToCheckout: () => Promise<{
+    success: boolean;
+    checkoutUrl?: string;
+    error?: string;
+  }>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -29,12 +41,53 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Delivery & Dedication States
+  const [deliveryNotes, setDeliveryNotesState] = useState<string>("");
+  const [cardMessage, setCardMessageState] = useState<string>("");
+
+  const setDeliveryNotes = useCallback((notes: string) => {
+    const clean = sanitizeOrderText(notes, 500);
+    setDeliveryNotesState(clean);
+    try {
+      localStorage.setItem("cerato_delivery_notes", clean);
+    } catch {}
+  }, []);
+
+  const setCardMessage = useCallback((msg: string) => {
+    const clean = sanitizeOrderText(msg, 500);
+    setCardMessageState(clean);
+    try {
+      localStorage.setItem("cerato_card_message", clean);
+    } catch {}
+  }, []);
+
   useEffect(() => {
+    // Restore locally saved notes on mount
+    try {
+      const savedDel = localStorage.getItem("cerato_delivery_notes");
+      if (savedDel) setDeliveryNotesState(savedDel);
+      const savedCard = localStorage.getItem("cerato_card_message");
+      if (savedCard) setCardMessageState(savedCard);
+    } catch {}
+
     const cartId = localStorage.getItem("shopify_cart_id");
     if (cartId) {
       getCartAction(cartId).then((existingCart) => {
         if (existingCart) {
           setCart(existingCart);
+          // Sync Shopify cart attributes if available
+          const delAttr = existingCart.attributes?.find(
+            (a) => a.key === "Instrucciones de entrega"
+          );
+          if (delAttr?.value) {
+            setDeliveryNotesState(delAttr.value);
+          }
+          const cardAttr = existingCart.attributes?.find(
+            (a) => a.key === "Dedicatoria para la tarjeta"
+          );
+          if (cardAttr?.value) {
+            setCardMessageState(cardAttr.value);
+          }
         } else {
           localStorage.removeItem("shopify_cart_id");
         }
@@ -93,6 +146,50 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const saveNotesAndProceedToCheckout = async (): Promise<{
+    success: boolean;
+    checkoutUrl?: string;
+    error?: string;
+  }> => {
+    if (!cart?.id) {
+      return { success: false, error: "El carrito está vacío o no se ha inicializado." };
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await saveCartNotesAction({
+        cartId: cart.id,
+        deliveryNotes: deliveryNotes.trim(),
+        cardMessage: cardMessage.trim()
+      });
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error || "No se pudieron guardar las notas en Shopify. Por favor intenta de nuevo."
+        };
+      }
+
+      if (result.cart) {
+        setCart(result.cart);
+      }
+
+      const finalCheckoutUrl = result.cart?.checkoutUrl || cart.checkoutUrl;
+      return {
+        success: true,
+        checkoutUrl: finalCheckoutUrl
+      };
+    } catch (error) {
+      console.error("Error saving cart notes:", error);
+      return {
+        success: false,
+        error: "Error inesperado al conectar con Shopify. Por favor intenta de nuevo."
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -105,7 +202,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addItem,
         updateItemQuantity,
         removeItem,
-        checkoutUrl: cart?.checkoutUrl || null
+        checkoutUrl: cart?.checkoutUrl || null,
+        deliveryNotes,
+        setDeliveryNotes,
+        cardMessage,
+        setCardMessage,
+        saveNotesAndProceedToCheckout
       }}
     >
       {children}
@@ -120,3 +222,4 @@ export const useCart = () => {
   }
   return context;
 };
+

@@ -75,9 +75,15 @@ export interface SeasonalCollectionData {
   products: ShopifyProduct[];
 }
 
+export interface Attribute {
+  key: string;
+  value: string;
+}
+
 export interface CartItem {
   id: string;
   quantity: number;
+  attributes?: Attribute[];
   cost: {
     totalAmount: MoneyV2;
   };
@@ -93,6 +99,8 @@ export interface CartItem {
 export interface Cart {
   id: string;
   checkoutUrl: string;
+  note?: string | null;
+  attributes?: Attribute[];
   cost: {
     subtotalAmount: MoneyV2;
     totalAmount: MoneyV2;

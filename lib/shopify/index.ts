@@ -16,6 +16,8 @@ import {
   createCartMutation,
   addToCartMutation,
   updateCartItemMutation,
+  updateCartAttributesMutation,
+  updateCartNoteMutation,
   removeFromCartMutation,
   getCartQuery,
 } from './queries/cart';
@@ -506,6 +508,93 @@ export async function getCart(cartId: string): Promise<Cart | null> {
     cache: 'no-store',
   });
   return res?.body?.cart || null;
+}
+
+export async function updateCartAttributes(
+  cartId: string,
+  attributes: Array<{ key: string; value: string }>,
+  note?: string,
+): Promise<{ cart: Cart | null; userErrors?: Array<{ field: string[]; message: string }> }> {
+  let updatedCart: Cart | null = null;
+  const allUserErrors: Array<{ field: string[]; message: string }> = [];
+
+  if (attributes && attributes.length > 0) {
+    const res = await shopifyFetch<{
+      cartAttributesUpdate: {
+        cart: Cart;
+        userErrors: Array<{ field: string[]; message: string }>;
+      };
+    }>({
+      query: updateCartAttributesMutation,
+      variables: { cartId, attributes },
+      cache: 'no-store',
+    });
+
+    if (res?.body?.cartAttributesUpdate?.userErrors?.length) {
+      console.error(
+        'Shopify updateCartAttributes userErrors:',
+        res.body.cartAttributesUpdate.userErrors,
+      );
+      allUserErrors.push(...res.body.cartAttributesUpdate.userErrors);
+    } else if (res?.body?.cartAttributesUpdate?.cart) {
+      updatedCart = res.body.cartAttributesUpdate.cart;
+    }
+  }
+
+  if (typeof note === 'string') {
+    const res = await shopifyFetch<{
+      cartNoteUpdate: {
+        cart: Cart;
+        userErrors: Array<{ field: string[]; message: string }>;
+      };
+    }>({
+      query: updateCartNoteMutation,
+      variables: { cartId, note },
+      cache: 'no-store',
+    });
+
+    if (res?.body?.cartNoteUpdate?.userErrors?.length) {
+      console.error(
+        'Shopify updateCartNote userErrors:',
+        res.body.cartNoteUpdate.userErrors,
+      );
+      allUserErrors.push(...res.body.cartNoteUpdate.userErrors);
+    } else if (res?.body?.cartNoteUpdate?.cart) {
+      updatedCart = res.body.cartNoteUpdate.cart;
+    }
+  }
+
+  return { cart: updatedCart, userErrors: allUserErrors };
+}
+
+export async function updateCartLines(
+  cartId: string,
+  lines: Array<{
+    id: string;
+    quantity?: number;
+    attributes?: Array<{ key: string; value: string }>;
+  }>,
+): Promise<{ cart: Cart | null; userErrors?: Array<{ field: string[]; message: string }> }> {
+  const res = await shopifyFetch<{
+    cartLinesUpdate: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
+  }>({
+    query: updateCartItemMutation,
+    variables: {
+      cartId,
+      lines,
+    },
+    cache: 'no-store',
+  });
+
+  if (res?.body?.cartLinesUpdate?.userErrors?.length) {
+    console.error('Shopify updateCartLines userErrors:', res.body.cartLinesUpdate.userErrors);
+    return { cart: null, userErrors: res.body.cartLinesUpdate.userErrors };
+  }
+
+  return { cart: res?.body?.cartLinesUpdate?.cart || null, userErrors: [] };
 }
 
 /**

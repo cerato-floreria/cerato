@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { toPascalCase } from '@/lib/shopify';
@@ -12,8 +12,21 @@ interface CartDrawerProps {
 }
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
-  const { cart, updateItemQuantity, removeItem, checkoutUrl, isLoading } =
-    useCart();
+  const {
+    cart,
+    updateItemQuantity,
+    removeItem,
+    checkoutUrl,
+    isLoading,
+    deliveryNotes,
+    setDeliveryNotes,
+    cardMessage,
+    setCardMessage,
+    saveNotesAndProceedToCheckout
+  } = useCart();
+
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -75,13 +88,31 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     lineItems[0]?.merchandise?.price?.currencyCode ||
     'MXN';
 
-  const handleCheckout = () => {
-    if (checkoutUrl) {
-      window.location.href = checkoutUrl;
-    } else {
-      alert(
-        'Su carrito está listo. Redirigiendo a la pantalla de pago seguro de Shopify...',
-      );
+  const handleCheckout = async () => {
+    setCheckoutError(null);
+    setIsCheckingOut(true);
+
+    try {
+      const res = await saveNotesAndProceedToCheckout();
+      if (!res.success) {
+        setCheckoutError(
+          res.error || 'No se pudieron confirmar las notas con Shopify. Por favor intenta de nuevo.'
+        );
+        setIsCheckingOut(false);
+        return;
+      }
+
+      const finalUrl = res.checkoutUrl || checkoutUrl;
+      if (finalUrl) {
+        window.location.href = finalUrl;
+      } else {
+        setCheckoutError('El enlace de pago de Shopify no está disponible en este momento.');
+        setIsCheckingOut(false);
+      }
+    } catch (err) {
+      console.error('Error during checkout redirection:', err);
+      setCheckoutError('Ocurrió un error al preparar el pago. Por favor intenta de nuevo.');
+      setIsCheckingOut(false);
     }
   };
 
@@ -103,7 +134,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
         role="dialog"
         aria-modal="true"
         aria-label="Carrito de compras"
-        className={`fixed right-0 top-0 bottom-0 z-[130] w-full sm:w-[450px] lg:w-[33%] bg-white shadow-2xl transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) flex flex-col ${
+        className={`fixed right-0 top-0 bottom-0 z-[130] w-full sm:w-[450px] lg:w-[35%] bg-white shadow-2xl transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -139,123 +170,197 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                 </p>
               </div>
             ) : (
-              lineItems.map((item: CartItem) => {
-                const productTitle = toPascalCase(
-                  item.merchandise?.product?.title ||
-                    item.merchandise?.title ||
-                    'Producto Floral'
-                );
-                const rawVariantTitle = (item.merchandise?.title || '').trim();
-                const isDefaultVariant =
-                  !rawVariantTitle ||
-                  rawVariantTitle.toLowerCase() === 'default title' ||
-                  rawVariantTitle.toLowerCase() === 'default';
+              <>
+                {lineItems.map((item: CartItem) => {
+                  const productTitle = toPascalCase(
+                    item.merchandise?.product?.title ||
+                      item.merchandise?.title ||
+                      'Producto Floral'
+                  );
+                  const rawVariantTitle = (item.merchandise?.title || '').trim();
+                  const isDefaultVariant =
+                    !rawVariantTitle ||
+                    rawVariantTitle.toLowerCase() === 'default title' ||
+                    rawVariantTitle.toLowerCase() === 'default';
 
-                const variantTitle = !isDefaultVariant ? toPascalCase(rawVariantTitle) : '';
-                const displayTitle =
-                  variantTitle && variantTitle.toLowerCase() !== productTitle.toLowerCase()
-                    ? `${productTitle} – ${variantTitle}`
-                    : productTitle;
-                const imageUrl =
-                  item.merchandise?.image?.url ||
-                  item.merchandise?.product?.featuredImage?.url ||
-                  'https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=200';
-                
-                const unitPrice = parseFloat(item.merchandise?.price?.amount || '0');
-                const lineTotal = item.cost?.totalAmount?.amount
-                  ? parseFloat(item.cost.totalAmount.amount)
-                  : (!isNaN(unitPrice) ? unitPrice * (item.quantity || 1) : 0);
+                  const variantTitle = !isDefaultVariant ? toPascalCase(rawVariantTitle) : '';
+                  const displayTitle =
+                    variantTitle && variantTitle.toLowerCase() !== productTitle.toLowerCase()
+                      ? `${productTitle} – ${variantTitle}`
+                      : productTitle;
+                  const imageUrl =
+                    item.merchandise?.image?.url ||
+                    item.merchandise?.product?.featuredImage?.url ||
+                    'https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=200';
+                  
+                  const unitPrice = parseFloat(item.merchandise?.price?.amount || '0');
+                  const lineTotal = item.cost?.totalAmount?.amount
+                    ? parseFloat(item.cost.totalAmount.amount)
+                    : (!isNaN(unitPrice) ? unitPrice * (item.quantity || 1) : 0);
 
-                const itemCurrency =
-                  item.cost?.totalAmount?.currencyCode ||
-                  item.merchandise?.price?.currencyCode ||
-                  currency;
-                
-                return (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-4 bg-white p-3.5 sm:p-4 rounded-2xl border border-primary/10 shadow-xs relative w-full"
-                  >
-                    {/* Fixed Square Image */}
-                    <div className="w-20 h-20 min-w-[80px] min-h-[80px] max-w-[80px] max-h-[80px] rounded-xl overflow-hidden bg-gray-50 border border-primary/10 shrink-0 relative">
-                      <Image
-                        src={imageUrl}
-                        alt={displayTitle}
-                        width={80}
-                        height={80}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                  const itemCurrency =
+                    item.cost?.totalAmount?.currencyCode ||
+                    item.merchandise?.price?.currencyCode ||
+                    currency;
 
-                    {/* Product Details */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch py-0.5">
-                      {/* Top Row: Title + Delete Button */}
-                      <div className="flex items-start justify-between gap-2">
-                        <h4
-                          className="text-sm font-display font-semibold text-primary truncate block flex-1 min-w-0"
-                          title={displayTitle}
-                        >
-                          {displayTitle}
-                        </h4>
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          disabled={isLoading}
-                          aria-label={`Eliminar ${displayTitle} del carrito`}
-                          className="text-primary/30 hover:text-red-600 transition-colors p-1 -mr-1 -mt-1 cursor-pointer shrink-0 disabled:opacity-50"
-                          title="Eliminar producto"
-                        >
-                          <span className="material-symbols-outlined text-lg leading-none">
-                            delete
-                          </span>
-                        </button>
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-4 bg-white p-3.5 sm:p-4 rounded-2xl border border-primary/10 shadow-xs relative w-full"
+                    >
+                      {/* Fixed Square Image */}
+                      <div className="w-20 h-20 min-w-[80px] min-h-[80px] max-w-[80px] max-h-[80px] rounded-xl overflow-hidden bg-gray-50 border border-primary/10 shrink-0 relative">
+                        <Image
+                          src={imageUrl}
+                          alt={displayTitle}
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
 
-                      {/* Bottom Row: Stepper Input + Price */}
-                      <div className="flex items-center justify-between gap-2 mt-2">
-                        {/* Quantity Stepper */}
-                        <div className="flex items-center border border-primary/15 rounded-lg bg-background-light shadow-xs overflow-hidden shrink-0">
-                          <button
-                            onClick={() =>
-                              updateItemQuantity(item.id, (item.quantity || 1) - 1)
-                            }
-                            disabled={isLoading}
-                            aria-label="Disminuir cantidad"
-                            className="w-7 h-7 flex items-center justify-center text-primary/60 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-40 cursor-pointer font-bold text-sm"
+                      {/* Product Details */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch py-0.5">
+                        {/* Top Row: Title + Delete Button */}
+                        <div className="flex items-start justify-between gap-2">
+                          <h4
+                            className="text-sm font-display font-semibold text-primary truncate block flex-1 min-w-0"
+                            title={displayTitle}
                           >
-                            -
-                          </button>
-                          <span className="w-8 text-center text-xs font-bold text-primary">
-                            {item.quantity || 1}
-                          </span>
+                            {displayTitle}
+                          </h4>
                           <button
-                            onClick={() =>
-                              updateItemQuantity(item.id, (item.quantity || 1) + 1)
-                            }
-                            disabled={isLoading}
-                            aria-label="Aumentar cantidad"
-                            className="w-7 h-7 flex items-center justify-center text-primary/60 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-40 cursor-pointer font-bold text-sm"
+                            onClick={() => removeItem(item.id)}
+                            disabled={isLoading || isCheckingOut}
+                            aria-label={`Eliminar ${displayTitle} del carrito`}
+                            className="text-primary/30 hover:text-red-600 transition-colors p-1 -mr-1 -mt-1 cursor-pointer shrink-0 disabled:opacity-50"
+                            title="Eliminar producto"
                           >
-                            +
+                            <span className="material-symbols-outlined text-lg leading-none">
+                              delete
+                            </span>
                           </button>
                         </div>
 
-                        {/* Line Total Price */}
-                        <div className="text-right shrink-0">
-                          <span className="font-display font-bold text-sm sm:text-[15px] text-primary block whitespace-nowrap">
-                            ${lineTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {itemCurrency}
-                          </span>
+                        {/* Bottom Row: Stepper Input + Price */}
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          {/* Quantity Stepper */}
+                          <div className="flex items-center border border-primary/15 rounded-lg bg-background-light shadow-xs overflow-hidden shrink-0">
+                            <button
+                              onClick={() =>
+                                updateItemQuantity(item.id, (item.quantity || 1) - 1)
+                              }
+                              disabled={isLoading || isCheckingOut}
+                              aria-label="Disminuir cantidad"
+                              className="w-7 h-7 flex items-center justify-center text-primary/60 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-40 cursor-pointer font-bold text-sm"
+                            >
+                              -
+                            </button>
+                            <span className="w-8 text-center text-xs font-bold text-primary">
+                              {item.quantity || 1}
+                            </span>
+                            <button
+                              onClick={() =>
+                                updateItemQuantity(item.id, (item.quantity || 1) + 1)
+                              }
+                              disabled={isLoading || isCheckingOut}
+                              aria-label="Aumentar cantidad"
+                              className="w-7 h-7 flex items-center justify-center text-primary/60 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-40 cursor-pointer font-bold text-sm"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          {/* Line Total Price */}
+                          <div className="text-right shrink-0">
+                            <span className="font-display font-bold text-sm sm:text-[15px] text-primary block whitespace-nowrap">
+                              ${lineTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {itemCurrency}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
+                  );
+                })}
+
+                {/* Delivery Instructions & Order-Level Dedication Section */}
+                <div className="flex flex-col gap-3 bg-white p-4 rounded-2xl border border-primary/10 shadow-xs mt-1">
+                  <div className="flex items-center justify-between border-b border-primary/10 pb-2">
+                    <div className="flex items-center gap-2 text-primary font-display font-semibold text-sm">
+                      <span className="material-symbols-outlined text-accent text-lg">local_shipping</span>
+                      <span>Instrucciones y Dedicatoria</span>
+                    </div>
+                    <span className="text-[10px] font-sans text-primary/40 uppercase tracking-wider">
+                      Opcional
+                    </span>
                   </div>
-                );
-              })
+
+                  {/* Instrucciones de entrega */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="cart-delivery-notes"
+                        className="text-[11px] font-sans font-semibold text-primary/80 flex items-center gap-1"
+                      >
+                        <span>Instrucciones de entrega</span>
+                      </label>
+                      <span className="text-[9px] text-primary/40">
+                        {deliveryNotes.length}/500
+                      </span>
+                    </div>
+                    <textarea
+                      id="cart-delivery-notes"
+                      value={deliveryNotes}
+                      onChange={(e) => setDeliveryNotes(e.target.value)}
+                      rows={2}
+                      maxLength={500}
+                      placeholder="Referencias de la fachada, horario preferido o indicaciones para el repartidor (ej. Portón blanco, dejar con conserje)..."
+                      className="w-full text-xs font-sans p-2.5 rounded-xl border border-primary/15 bg-background-light/40 text-primary placeholder:text-primary/30 focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent resize-none transition-all shadow-xs"
+                    />
+                  </div>
+
+                  {/* Dedicatoria general para la tarjeta */}
+                  <div className="flex flex-col gap-1.5 pt-2 border-t border-primary/5">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="cart-card-message"
+                        className="text-[11px] font-sans font-semibold text-primary/80 flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-sm text-accent">drafts</span>
+                        <span>Dedicatoria para la tarjeta</span>
+                      </label>
+                      <span className="text-[9px] text-primary/40">
+                        {cardMessage.length}/500
+                      </span>
+                    </div>
+                    <textarea
+                      id="cart-card-message"
+                      value={cardMessage}
+                      onChange={(e) => setCardMessage(e.target.value)}
+                      rows={2}
+                      maxLength={500}
+                      placeholder="Mensaje de felicitación para la tarjeta del pedido (De, Para y mensaje)..."
+                      className="w-full text-xs font-sans p-2.5 rounded-xl border border-primary/15 bg-background-light/40 text-primary placeholder:text-primary/30 focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent resize-none transition-all shadow-xs"
+                    />
+                    <p className="text-[9px] text-primary/50 italic mt-0.5">
+                      Incluimos una tarjeta artesanal impresa personalizada sin costo adicional ✨
+                    </p>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
 
         {/* Footer / Summary */}
         <div className="bg-white border-t border-primary/10 px-6 sm:px-8 py-6 sm:py-7 flex flex-col gap-4 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] shrink-0">
+          {checkoutError && (
+            <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-800 p-3 rounded-xl text-xs font-sans">
+              <span className="material-symbols-outlined text-base text-red-600 shrink-0 mt-0.5">error</span>
+              <span className="flex-1 leading-relaxed">{checkoutError}</span>
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center text-[11px] font-sans font-bold uppercase tracking-widest text-primary/50">
               <span>Subtotal ({totalQuantity} {totalQuantity === 1 ? 'artículo' : 'artículos'})</span>
@@ -280,10 +385,19 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={handleCheckout}
-            disabled={lineItems.length === 0 || isLoading}
-            className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-sans font-bold tracking-[0.25em] text-[11px] transition-all shadow-xl shadow-primary/20 active:scale-[0.98] uppercase mt-1 disabled:opacity-50 cursor-pointer"
+            disabled={lineItems.length === 0 || isLoading || isCheckingOut}
+            className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-sans font-bold tracking-[0.25em] text-[11px] transition-all shadow-xl shadow-primary/20 active:scale-[0.98] uppercase mt-1 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
           >
-            {isLoading ? 'PROCESANDO...' : 'PAGAR AHORA'}
+            {isCheckingOut ? (
+              <>
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>CONFIRMANDO CON SHOPIFY...</span>
+              </>
+            ) : isLoading ? (
+              'PROCESANDO...'
+            ) : (
+              'CONTINUAR AL PAGO'
+            )}
           </button>
           <p className="text-center text-[9px] font-sans text-primary/40 uppercase tracking-[0.2em] mt-1">
             Procesamiento de pago seguro operado por Shopify
@@ -295,3 +409,4 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
 };
 
 export default CartDrawer;
+
