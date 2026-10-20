@@ -11,9 +11,12 @@ import {
 } from "@/lib/shopify";
 import { Cart } from "@/lib/shopify/types";
 import { sanitizeOrderText, isValidShopifyId } from "@/lib/security";
+import { formatDeliveryDateHuman, isDeliverySlotAvailable } from "@/lib/delivery";
 
 export interface SaveCartNotesParams {
   cartId: string;
+  deliveryDate?: string;
+  deliveryTimeSlot?: string;
   deliveryNotes?: string;
   cardMessage?: string;
   lineAttributes?: Array<{
@@ -107,7 +110,14 @@ export async function saveCartNotesAction(
   params: SaveCartNotesParams
 ): Promise<SaveCartNotesResult> {
   try {
-    const { cartId, deliveryNotes = "", cardMessage = "", lineAttributes = [] } = params;
+    const {
+      cartId,
+      deliveryDate = "",
+      deliveryTimeSlot = "",
+      deliveryNotes = "",
+      cardMessage = "",
+      lineAttributes = []
+    } = params;
 
     // 1. Strict ID format validation to prevent injection
     if (!cartId || !isValidShopifyId(cartId)) {
@@ -115,10 +125,43 @@ export async function saveCartNotesAction(
     }
 
     // 2. Strict text sanitization: strip script/HTML tags, bidi characters, null bytes, collapse newlines, cap length
+    const cleanDate = sanitizeOrderText(deliveryDate, 30);
+    const cleanSlot = sanitizeOrderText(deliveryTimeSlot, 100);
     const cleanDeliveryNotes = sanitizeOrderText(deliveryNotes, 500);
     const cleanCardMessage = sanitizeOrderText(cardMessage, 500);
 
+    // 3. Strict delivery date and time slot enforcement
+    if (!cleanDate) {
+      return {
+        success: false,
+        cart: null,
+        error: "Por favor selecciona un día de entrega en el calendario."
+      };
+    }
+
+    if (!cleanSlot) {
+      return {
+        success: false,
+        cart: null,
+        error: "Por favor selecciona un horario de entrega disponible."
+      };
+    }
+
+    if (!isDeliverySlotAvailable(cleanDate, cleanSlot)) {
+      return {
+        success: false,
+        cart: null,
+        error: "El día u horario seleccionado no está disponible (mínimo 24 hrs de anticipación)."
+      };
+    }
+
     const attributes: Array<{ key: string; value: string }> = [];
+
+    // Delivery Date & Slot attributes
+    const humanDate = formatDeliveryDateHuman(cleanDate);
+    attributes.push({ key: "Fecha de entrega", value: humanDate || cleanDate });
+    attributes.push({ key: "Fecha de entrega (ISO)", value: cleanDate });
+    attributes.push({ key: "Horario de entrega", value: cleanSlot });
     if (cleanDeliveryNotes) {
       attributes.push({ key: "Instrucciones de entrega", value: cleanDeliveryNotes });
     }
@@ -128,11 +171,18 @@ export async function saveCartNotesAction(
 
     // Summary note for Shopify Admin Order details
     const noteParts: string[] = [];
+    if (cleanDate) {
+      const humanDate = formatDeliveryDateHuman(cleanDate);
+      noteParts.push(`Fecha de entrega: ${humanDate || cleanDate}`);
+    }
+    if (cleanSlot) {
+      noteParts.push(`Horario: ${cleanSlot}`);
+    }
     if (cleanDeliveryNotes) {
-      noteParts.push(`Instrucciones de entrega: ${cleanDeliveryNotes}`);
+      noteParts.push(`Instrucciones: ${cleanDeliveryNotes}`);
     }
     if (cleanCardMessage) {
-      noteParts.push(`Dedicatoria para la tarjeta: ${cleanCardMessage}`);
+      noteParts.push(`Dedicatoria: ${cleanCardMessage}`);
     }
     const combinedNote = noteParts.join(" | ");
 

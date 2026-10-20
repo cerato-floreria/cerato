@@ -10,6 +10,7 @@ import {
   saveCartNotesAction
 } from "@/app/actions/cart";
 import { sanitizeOrderText } from "@/lib/security";
+import { isDeliverySlotAvailable } from "@/lib/delivery";
 
 interface CartContextType {
   cart: Cart | null;
@@ -22,7 +23,11 @@ interface CartContextType {
   updateItemQuantity: (lineId: string, quantity: number) => Promise<void>;
   removeItem: (lineId: string) => Promise<void>;
   checkoutUrl: string | null;
-  // Delivery & Dedication fields (Order-level)
+  // Delivery Schedule & Dedication fields (Order-level)
+  deliveryDate: string;
+  setDeliveryDate: (date: string) => void;
+  deliveryTimeSlot: string;
+  setDeliveryTimeSlot: (slot: string) => void;
   deliveryNotes: string;
   setDeliveryNotes: (notes: string) => void;
   cardMessage: string;
@@ -41,9 +46,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Delivery & Dedication States
+  // Delivery Schedule & Dedication States
+  const [deliveryDate, setDeliveryDateState] = useState<string>("");
+  const [deliveryTimeSlot, setDeliveryTimeSlotState] = useState<string>("");
   const [deliveryNotes, setDeliveryNotesState] = useState<string>("");
   const [cardMessage, setCardMessageState] = useState<string>("");
+
+  const setDeliveryDate = useCallback((date: string) => {
+    const clean = sanitizeOrderText(date, 30);
+    setDeliveryDateState(clean);
+  }, []);
+
+  const setDeliveryTimeSlot = useCallback((slot: string) => {
+    const clean = sanitizeOrderText(slot, 100);
+    setDeliveryTimeSlotState(clean);
+  }, []);
 
   const setDeliveryNotes = useCallback((notes: string) => {
     const clean = sanitizeOrderText(notes, 500);
@@ -62,8 +79,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    // Restore locally saved notes on mount
+    // Clear legacy preselected date/slot to guarantee fresh user selection
     try {
+      localStorage.removeItem("cerato_delivery_date");
+      localStorage.removeItem("cerato_delivery_slot");
       const savedDel = localStorage.getItem("cerato_delivery_notes");
       if (savedDel) setDeliveryNotesState(savedDel);
       const savedCard = localStorage.getItem("cerato_card_message");
@@ -76,6 +95,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (existingCart) {
           setCart(existingCart);
           // Sync Shopify cart attributes if available
+          const dateAttr = existingCart.attributes?.find(
+            (a) => a.key === "Fecha de entrega (ISO)"
+          );
+          if (dateAttr?.value) {
+            setDeliveryDateState(dateAttr.value);
+          }
+          const slotAttr = existingCart.attributes?.find(
+            (a) => a.key === "Horario de entrega"
+          );
+          if (slotAttr?.value) {
+            setDeliveryTimeSlotState(slotAttr.value);
+          }
           const delAttr = existingCart.attributes?.find(
             (a) => a.key === "Instrucciones de entrega"
           );
@@ -155,10 +186,33 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: "El carrito está vacío o no se ha inicializado." };
     }
 
+    if (!deliveryDate) {
+      return {
+        success: false,
+        error: "Por favor selecciona un día de entrega en el calendario."
+      };
+    }
+
+    if (!deliveryTimeSlot) {
+      return {
+        success: false,
+        error: "Por favor selecciona un horario de entrega disponible."
+      };
+    }
+
+    if (!isDeliverySlotAvailable(deliveryDate, deliveryTimeSlot)) {
+      return {
+        success: false,
+        error: "El día u horario seleccionado no está disponible (mínimo 24 hrs de anticipación)."
+      };
+    }
+
     setIsLoading(true);
     try {
       const result = await saveCartNotesAction({
         cartId: cart.id,
+        deliveryDate,
+        deliveryTimeSlot,
         deliveryNotes: deliveryNotes.trim(),
         cardMessage: cardMessage.trim()
       });
@@ -203,6 +257,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateItemQuantity,
         removeItem,
         checkoutUrl: cart?.checkoutUrl || null,
+        deliveryDate,
+        setDeliveryDate,
+        deliveryTimeSlot,
+        setDeliveryTimeSlot,
         deliveryNotes,
         setDeliveryNotes,
         cardMessage,
