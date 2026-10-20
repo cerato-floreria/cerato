@@ -19,6 +19,7 @@ export interface SaveCartNotesParams {
   deliveryTimeSlot?: string;
   deliveryNotes?: string;
   cardMessage?: string;
+  acceptedTerms?: boolean;
   lineAttributes?: Array<{
     lineId: string;
     quantity?: number;
@@ -116,6 +117,7 @@ export async function saveCartNotesAction(
       deliveryTimeSlot = "",
       deliveryNotes = "",
       cardMessage = "",
+      acceptedTerms = false,
       lineAttributes = []
     } = params;
 
@@ -168,6 +170,9 @@ export async function saveCartNotesAction(
     if (cleanCardMessage) {
       attributes.push({ key: "Dedicatoria para la tarjeta", value: cleanCardMessage });
     }
+    if (acceptedTerms) {
+      attributes.push({ key: "Términos perecederos aceptados", value: "Sí" });
+    }
 
     // Summary note for Shopify Admin Order details
     const noteParts: string[] = [];
@@ -177,6 +182,9 @@ export async function saveCartNotesAction(
     }
     if (cleanSlot) {
       noteParts.push(`Horario: ${cleanSlot}`);
+    }
+    if (acceptedTerms) {
+      noteParts.push("Términos perecederos: Aceptados");
     }
     if (cleanDeliveryNotes) {
       noteParts.push(`Instrucciones: ${cleanDeliveryNotes}`);

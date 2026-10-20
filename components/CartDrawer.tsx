@@ -37,6 +37,17 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [hasAttemptedCheckout, setHasAttemptedCheckout] = useState(false);
+
+  // Reset terms acceptance whenever drawer closes so user must re-accept each purchase
+  useEffect(() => {
+    if (!isOpen) {
+      setAcceptedTerms(false);
+      setHasAttemptedCheckout(false);
+      setCheckoutError(null);
+    }
+  }, [isOpen]);
 
   // Compute upcoming delivery calendar days (next 21 days)
   const upcomingDays = useMemo(() => getUpcomingDeliveryDays(21), []);
@@ -138,10 +149,22 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       return;
     }
 
+    if (!acceptedTerms) {
+      setHasAttemptedCheckout(true);
+      setCheckoutError(
+        'Es necesario que marques como leído y aceptes los términos de compra para continuar al pago.',
+      );
+      const termsEl = document.getElementById('cart-terms-section');
+      if (termsEl) {
+        termsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
     setIsCheckingOut(true);
 
     try {
-      const res = await saveNotesAndProceedToCheckout();
+      const res = await saveNotesAndProceedToCheckout({ acceptedTerms: true });
       if (!res.success) {
         setCheckoutError(
           res.error ||
@@ -598,6 +621,75 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                     </p>
                   </div>
                 </div>
+
+                {/* Condiciones de Compra y Productos Perecederos (Obligatorio) */}
+                <div
+                  id="cart-terms-section"
+                  className={`flex flex-col gap-3 p-4 sm:p-5 rounded-2xl border transition-all mt-1 ${
+                    hasAttemptedCheckout && !acceptedTerms
+                      ? "bg-red-50/70 border-red-300 ring-2 ring-red-400/30 shadow-sm"
+                      : acceptedTerms
+                      ? "bg-emerald-50/40 border-emerald-300"
+                      : "bg-white border-primary/10 shadow-xs"
+                  }`}
+                >
+                  <div className="flex items-center justify-between border-b border-primary/10 pb-2.5">
+                    <div className="flex items-center gap-2 text-primary font-display font-semibold text-sm">
+                      <span className="material-symbols-outlined text-accent text-lg">
+                        verified_user
+                      </span>
+                      <span>Condiciones de Compra</span>
+                    </div>
+                    <span
+                      className={`text-[9px] font-sans font-bold px-2 py-0.5 rounded-full uppercase tracking-wider transition-colors ${
+                        acceptedTerms
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-accent/10 text-accent"
+                      }`}
+                    >
+                      {acceptedTerms ? "Aceptado ✓" : "Requerido *"}
+                    </span>
+                  </div>
+
+                  <div className="bg-background-light/70 p-3 sm:p-3.5 rounded-xl border border-primary/10 text-[11px] font-sans text-primary/80 leading-relaxed space-y-2">
+                    <p className="font-semibold text-primary">
+                      Al finalizar tu compra, aceptas que:
+                    </p>
+                    <ul className="space-y-1.5 list-disc pl-4 text-primary/75 marker:text-accent">
+                      <li>
+                        <strong>No hay cancelaciones ni reembolsos</strong> por tratarse de productos perecederos.
+                      </li>
+                      <li>
+                        <strong>Cualquier aclaración</strong> deberá hacerse al momento de la entrega con evidencia. No se aceptarán reclamaciones posteriores.
+                      </li>
+                      <li>
+                        <strong>Las flores pueden presentar variaciones naturales</strong> y están sujetas a disponibilidad. En caso de que no llegue la flor solicitada se reemplazará por otra similar de igual o mayor valor.
+                      </li>
+                    </ul>
+                  </div>
+
+                  <label className="flex items-start gap-2.5 cursor-pointer pt-1 select-none group">
+                    <input
+                      type="checkbox"
+                      id="cart-accept-terms-checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => {
+                        setAcceptedTerms(e.target.checked);
+                        if (e.target.checked) setCheckoutError(null);
+                      }}
+                      className="mt-0.5 h-4 w-4 rounded border-primary/30 text-primary focus:ring-accent accent-primary cursor-pointer shrink-0"
+                    />
+                    <span
+                      className={`text-xs font-sans leading-snug transition-colors ${
+                        hasAttemptedCheckout && !acceptedTerms
+                          ? "text-red-700 font-semibold"
+                          : "text-primary/90 group-hover:text-primary"
+                      }`}
+                    >
+                      He leído y acepto los términos de compra y condiciones de productos perecederos. <span className="text-red-500 font-bold">*</span>
+                    </span>
+                  </label>
+                </div>
               </>
             )}
           </div>
@@ -625,6 +717,21 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   {!deliveryDate
                     ? 'Selecciona fecha y horario de entrega arriba para continuar.'
                     : 'Selecciona un bloque de horario arriba para continuar.'}
+                </span>
+              </div>
+            )}
+
+          {lineItems.length > 0 &&
+            deliveryDate &&
+            deliveryTimeSlot &&
+            !acceptedTerms &&
+            !checkoutError && (
+              <div className="flex items-center gap-2 bg-amber-50/90 border border-amber-200 text-amber-900 px-3 py-2.5 rounded-xl text-xs font-sans">
+                <span className="material-symbols-outlined text-base text-amber-600 shrink-0">
+                  verified_user
+                </span>
+                <span className="leading-tight">
+                  Marca como leído el aviso de términos de compra arriba para continuar.
                 </span>
               </div>
             )}

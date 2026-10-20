@@ -80,10 +80,11 @@ const Navbar = () => {
     };
   }, []);
 
-  const headerStyle =
-    isScrolled || !isHomePage || activeMenu !== null
-      ? "bg-primary py-3 shadow-2xl shadow-primary/40 border-b border-white/10"
-      : "bg-transparent py-4 lg:py-5 hover:bg-primary/40 hover:backdrop-blur-md";
+  const isDarkNavbar = isScrolled || !isHomePage || activeMenu !== null;
+
+  const headerStyle = isDarkNavbar
+    ? "bg-primary py-3 shadow-2xl shadow-primary/40 border-b border-white/10"
+    : "bg-transparent py-4 lg:py-5 hover:bg-primary/40 hover:backdrop-blur-md";
 
   return (
     <>
@@ -101,16 +102,37 @@ const Navbar = () => {
 
       <header className={`fixed top-0 left-0 right-0 z-[100] w-full px-6 transition-all duration-500 ${headerStyle}`}>
         <div className="mx-auto flex max-w-[1440px] items-center justify-between lg:px-14">
-          {/* Logo */}
-          <Link href="/" className="flex items-center group/logo shrink-0" onClick={() => setIsMobileMenuOpen(false)}>
-            <Image
-              src="/Logo-Color-2.png"
-              alt="Cerato Arte Floral"
-              width={160}
-              height={75}
-              priority
-              className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover/logo:scale-105"
-            />
+          {/* Logo con cambio dinámico según fondo de barra */}
+          <Link
+            href="/"
+            className="flex items-center group/logo shrink-0"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Cerato Arte Floral - Inicio"
+          >
+            <div className="relative h-10 sm:h-12 w-[85px] sm:w-[102px] transition-transform duration-300 group-hover/logo:scale-105">
+              {/* Logo-Color-1: Barra transparente */}
+              <Image
+                src="/Logo-Color-1.png"
+                alt="Cerato Arte Floral"
+                fill
+                priority
+                className={`object-contain transition-opacity duration-500 ${
+                  isDarkNavbar ? "opacity-0 pointer-events-none" : "opacity-100"
+                }`}
+                sizes="(max-width: 640px) 85px, 102px"
+              />
+              {/* Logo-Color-2: Barra obscura */}
+              <Image
+                src="/Logo-Color-2.png"
+                alt="Cerato Arte Floral"
+                fill
+                priority
+                className={`object-contain transition-opacity duration-500 ${
+                  isDarkNavbar ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+                sizes="(max-width: 640px) 85px, 102px"
+              />
+            </div>
           </Link>
 
           {/* Desktop Dynamic Navigation derived from cat: & cat2: tags */}

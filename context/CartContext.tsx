@@ -32,7 +32,7 @@ interface CartContextType {
   setDeliveryNotes: (notes: string) => void;
   cardMessage: string;
   setCardMessage: (msg: string) => void;
-  saveNotesAndProceedToCheckout: () => Promise<{
+  saveNotesAndProceedToCheckout: (options?: { acceptedTerms?: boolean }) => Promise<{
     success: boolean;
     checkoutUrl?: string;
     error?: string;
@@ -177,7 +177,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const saveNotesAndProceedToCheckout = async (): Promise<{
+  const saveNotesAndProceedToCheckout = async (options?: {
+    acceptedTerms?: boolean;
+  }): Promise<{
     success: boolean;
     checkoutUrl?: string;
     error?: string;
@@ -214,7 +216,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deliveryDate,
         deliveryTimeSlot,
         deliveryNotes: deliveryNotes.trim(),
-        cardMessage: cardMessage.trim()
+        cardMessage: cardMessage.trim(),
+        acceptedTerms: Boolean(options?.acceptedTerms)
       });
 
       if (!result.success) {
