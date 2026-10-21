@@ -102,37 +102,21 @@ const Navbar = () => {
 
       <header className={`fixed top-0 left-0 right-0 z-[100] w-full px-6 transition-all duration-500 ${headerStyle}`}>
         <div className="mx-auto flex max-w-[1440px] items-center justify-between lg:px-14">
-          {/* Logo con cambio dinámico según fondo de barra */}
+          {/* Logo */}
           <Link
             href="/"
             className="flex items-center group/logo shrink-0"
             onClick={() => setIsMobileMenuOpen(false)}
             aria-label="Cerato Arte Floral - Inicio"
           >
-            <div className="relative h-10 sm:h-12 w-[85px] sm:w-[102px] transition-transform duration-300 group-hover/logo:scale-105">
-              {/* Logo-Color-1: Barra transparente */}
-              <Image
-                src="/Logo-Color-1.png"
-                alt="Cerato Arte Floral"
-                fill
-                priority
-                className={`object-contain transition-opacity duration-500 ${
-                  isDarkNavbar ? "opacity-0 pointer-events-none" : "opacity-100"
-                }`}
-                sizes="(max-width: 640px) 85px, 102px"
-              />
-              {/* Logo-Color-2: Barra obscura */}
-              <Image
-                src="/Logo-Color-2.png"
-                alt="Cerato Arte Floral"
-                fill
-                priority
-                className={`object-contain transition-opacity duration-500 ${
-                  isDarkNavbar ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
-                sizes="(max-width: 640px) 85px, 102px"
-              />
-            </div>
+            <Image
+              src="/Logo-Color-1.png"
+              alt="Cerato Arte Floral"
+              width={160}
+              height={75}
+              priority
+              className="h-10 sm:h-12 w-auto object-contain transition-transform duration-300 group-hover/logo:scale-105"
+            />
           </Link>
 
           {/* Desktop Dynamic Navigation derived from cat: & cat2: tags */}
@@ -290,7 +274,7 @@ const Navbar = () => {
           <div className="flex items-center justify-between p-6 border-b border-white/5 bg-primary/80 backdrop-blur-md sticky top-0 z-10">
             <Link href="/" className="flex items-center" onClick={() => setIsMobileMenuOpen(false)}>
               <Image
-                src="/Logo-Color-2.png"
+                src="/Logo-Color-1.png"
                 alt="Cerato Arte Floral"
                 width={130}
                 height={60}

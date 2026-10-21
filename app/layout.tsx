@@ -4,6 +4,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import FloatingActions from '@/components/FloatingActions';
+import InitialLoader from '@/components/InitialLoader';
 import { CartProvider } from '@/context/CartContext';
 
 const notoSerif = Noto_Serif({
@@ -123,6 +124,7 @@ export default function RootLayout({
           }}
         />
         <CartProvider>
+          <InitialLoader />
           <Navbar />
           <main id="main-content" className="flex-1 flex flex-col">
             {children}
