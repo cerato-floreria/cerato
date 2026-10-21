@@ -3,11 +3,12 @@
 import {
   getAllProducts,
   getProductByHandle,
+  getSeasonalCollection,
   buildTaxonomy,
   getMockProducts,
   parseProductTags
 } from "@/lib/shopify";
-import { ShopifyProduct, TaxonomyData } from "@/lib/shopify/types";
+import { ShopifyProduct, TaxonomyData, SeasonalCollectionData } from "@/lib/shopify/types";
 
 /**
  * Server Action to fetch all products from Shopify.
@@ -45,5 +46,17 @@ export async function getTaxonomyAction(): Promise<TaxonomyData> {
     console.error("Error in getTaxonomyAction:", error);
     const mock = getMockProducts();
     return buildTaxonomy(mock);
+  }
+}
+
+/**
+ * Server Action to fetch active seasonal collection starting with 'temporada: {name}'.
+ */
+export async function getSeasonalCollectionAction(): Promise<SeasonalCollectionData | null> {
+  try {
+    return await getSeasonalCollection();
+  } catch (error) {
+    console.error("Error in getSeasonalCollectionAction:", error);
+    return null;
   }
 }

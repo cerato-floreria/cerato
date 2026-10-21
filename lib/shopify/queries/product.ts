@@ -76,3 +76,33 @@ export const getProductByHandleQuery = `
   }
   ${productFragment}
 `;
+
+export const getCollectionsQuery = `
+  query getCollections($first: Int = 50) {
+    collections(first: $first) {
+      edges {
+        node {
+          id
+          handle
+          title
+          description
+          descriptionHtml
+          image {
+            url
+            altText
+            width
+            height
+          }
+          products(first: 50) {
+            edges {
+              node {
+                ...productFields
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ${productFragment}
+`;

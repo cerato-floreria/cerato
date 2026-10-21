@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { toPascalCase } from '@/lib/shopify';
+import SoldOutBadge from './SoldOutBadge';
 
 interface ProductCardProps {
   id: string;
@@ -12,6 +13,8 @@ interface ProductCardProps {
   price: number;
   currency?: string;
   image: string;
+  availableForSale?: boolean;
+  categorySlug?: string;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -20,6 +23,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
   name,
   price,
   image,
+  availableForSale = true,
+  categorySlug,
 }) => {
   const targetSlug = handle || id;
   const displayName = useMemo(() => toPascalCase(name), [name]);
@@ -51,9 +56,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   useEffect(() => {
-    checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      checkOverflow();
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, [displayName]);
 
   const handleMouseEnter = () => {
@@ -65,9 +73,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
     setIsHovered(false);
   };
 
+  const productHref = categorySlug
+    ? `/producto/${targetSlug}?from=${encodeURIComponent(categorySlug)}`
+    : `/producto/${targetSlug}`;
+
   return (
     <Link
-      href={`/producto/${targetSlug}`}
+      href={productHref}
       className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-cream border border-primary/5 shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 active:scale-[0.98]"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -80,6 +92,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
         className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
       />
+
+      {/* Out of Stock Badge */}
+      {!availableForSale && (
+        <div className="absolute top-3.5 right-3.5 z-10">
+          <SoldOutBadge />
+        </div>
+      )}
 
       {/* Information Overlay */}
       <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-5 pt-16 bg-gradient-to-t from-primary/95 via-primary/60 to-transparent transition-all duration-500">
@@ -124,9 +143,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* View Product CTA Button */}
-        <button className="w-full rounded-lg bg-white/95 py-2.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary transition-all group-hover:bg-accent-gold group-hover:text-white shadow-md backdrop-blur-sm cursor-pointer">
+        <span className="w-full block text-center rounded-lg bg-white/95 py-2.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary transition-all group-hover:bg-accent-gold group-hover:text-white shadow-md backdrop-blur-sm">
           Ver Detalles
-        </button>
+        </span>
       </div>
     </Link>
   );
