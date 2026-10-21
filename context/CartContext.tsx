@@ -36,6 +36,8 @@ interface CartContextType {
   setCardTo: (to: string) => void;
   cardMessage: string;
   setCardMessage: (msg: string) => void;
+  cardSignature: string;
+  setCardSignature: (sig: string) => void;
   saveNotesAndProceedToCheckout: (options?: { acceptedTerms?: boolean }) => Promise<{
     success: boolean;
     checkoutUrl?: string;
@@ -57,6 +59,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cardFrom, setCardFromState] = useState<string>("");
   const [cardTo, setCardToState] = useState<string>("");
   const [cardMessage, setCardMessageState] = useState<string>("");
+  const [cardSignature, setCardSignatureState] = useState<string>("");
 
   const setDeliveryDate = useCallback((date: string) => {
     const clean = sanitizeOrderText(date, 30);
@@ -100,6 +103,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {}
   }, []);
 
+  const setCardSignature = useCallback((sig: string) => {
+    const value = typeof sig === "string" ? sig.slice(0, 100) : "";
+    setCardSignatureState(value);
+    try {
+      localStorage.setItem("cerato_card_signature", value);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     // Clear legacy preselected date/slot to guarantee fresh user selection
     try {
@@ -113,6 +124,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (savedCardTo) setCardToState(savedCardTo);
       const savedCard = localStorage.getItem("cerato_card_message");
       if (savedCard) setCardMessageState(savedCard);
+      const savedCardSig = localStorage.getItem("cerato_card_signature");
+      if (savedCardSig) setCardSignatureState(savedCardSig);
     } catch {}
 
     const cartId = localStorage.getItem("shopify_cart_id");
@@ -156,6 +169,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           );
           if (cardAttr?.value) {
             setCardMessageState(cardAttr.value);
+          }
+          const sigAttr = existingCart.attributes?.find(
+            (a) => a.key === "Firma de la tarjeta"
+          );
+          if (sigAttr?.value) {
+            setCardSignatureState(sigAttr.value);
           }
         } else {
           localStorage.removeItem("shopify_cart_id");
@@ -271,6 +290,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cardFrom: cardFrom.trim(),
         cardTo: cardTo.trim(),
         cardMessage: cardMessage.trim(),
+        cardSignature: cardSignature.trim(),
         acceptedTerms: Boolean(options?.acceptedTerms)
       });
 
@@ -326,6 +346,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCardTo,
         cardMessage,
         setCardMessage,
+        cardSignature,
+        setCardSignature,
         saveNotesAndProceedToCheckout
       }}
     >

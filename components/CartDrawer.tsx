@@ -36,6 +36,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     setCardTo,
     cardMessage,
     setCardMessage,
+    cardSignature,
+    setCardSignature,
     saveNotesAndProceedToCheckout,
   } = useCart();
 
@@ -704,6 +706,36 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                       maxLength={500}
                       placeholder="Escribe aquí las palabras especiales que deseas que imprimamos en la tarjeta..."
                       className="w-full text-xs font-sans p-2.5 rounded-xl border border-primary/15 bg-background-light/40 text-primary placeholder:text-primary/30 focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent resize-none transition-all shadow-xs"
+                    />
+                  </div>
+
+                  {/* Campo 'Firma:' (Opcional) */}
+                  <div className="flex flex-col gap-1.5 pt-2 border-t border-primary/5">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="cart-card-signature"
+                        className="text-[11px] font-sans font-semibold text-primary/80 flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-sm text-accent">
+                          edit_note
+                        </span>
+                        <span>Firma:</span>
+                        <span className="text-[9px] text-primary/40 font-normal">
+                          (Opcional)
+                        </span>
+                      </label>
+                      <span className="text-[9px] text-primary/40">
+                        {cardSignature.length}/100
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      id="cart-card-signature"
+                      value={cardSignature}
+                      onChange={(e) => setCardSignature(e.target.value)}
+                      maxLength={100}
+                      placeholder="Cómo deseas firmar la tarjeta (ej. Tu admirador secreto, Familia Gómez, Con amor...)"
+                      className="w-full text-xs font-sans px-3 py-2.5 rounded-xl border border-primary/15 bg-background-light/40 text-primary placeholder:text-primary/30 focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent transition-all shadow-xs"
                     />
                   </div>
                 </div>

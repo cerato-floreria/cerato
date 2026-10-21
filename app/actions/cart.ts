@@ -21,6 +21,7 @@ export interface SaveCartNotesParams {
   cardFrom?: string;
   cardTo?: string;
   cardMessage?: string;
+  cardSignature?: string;
   acceptedTerms?: boolean;
   lineAttributes?: Array<{
     lineId: string;
@@ -121,6 +122,7 @@ export async function saveCartNotesAction(
       cardFrom = "",
       cardTo = "",
       cardMessage = "",
+      cardSignature = "",
       acceptedTerms = false,
       lineAttributes = []
     } = params;
@@ -137,6 +139,7 @@ export async function saveCartNotesAction(
     const cleanCardFrom = sanitizeOrderText(cardFrom, 100);
     const cleanCardTo = sanitizeOrderText(cardTo, 100);
     const cleanCardMessage = sanitizeOrderText(cardMessage, 500);
+    const cleanCardSignature = sanitizeOrderText(cardSignature, 100);
 
     // 3. Strict delivery date and time slot enforcement
     if (!cleanDate) {
@@ -189,6 +192,9 @@ export async function saveCartNotesAction(
     attributes.push({ key: "Horario de entrega", value: cleanSlot });
     attributes.push({ key: "De (Remitente)", value: cleanCardFrom });
     attributes.push({ key: "Para (Destinatario)", value: cleanCardTo });
+    if (cleanCardSignature) {
+      attributes.push({ key: "Firma de la tarjeta", value: cleanCardSignature });
+    }
     if (cleanDeliveryNotes) {
       attributes.push({ key: "Instrucciones de entrega", value: cleanDeliveryNotes });
     }
@@ -212,6 +218,9 @@ export async function saveCartNotesAction(
     noteParts.push(`Para: ${cleanCardTo}`);
     if (cleanCardMessage) {
       noteParts.push(`Dedicatoria: ${cleanCardMessage}`);
+    }
+    if (cleanCardSignature) {
+      noteParts.push(`Firma: ${cleanCardSignature}`);
     }
     if (acceptedTerms) {
       noteParts.push("Términos perecederos: Aceptados");
