@@ -18,6 +18,8 @@ export interface SaveCartNotesParams {
   deliveryDate?: string;
   deliveryTimeSlot?: string;
   deliveryNotes?: string;
+  cardFrom?: string;
+  cardTo?: string;
   cardMessage?: string;
   acceptedTerms?: boolean;
   lineAttributes?: Array<{
@@ -116,6 +118,8 @@ export async function saveCartNotesAction(
       deliveryDate = "",
       deliveryTimeSlot = "",
       deliveryNotes = "",
+      cardFrom = "",
+      cardTo = "",
       cardMessage = "",
       acceptedTerms = false,
       lineAttributes = []
@@ -130,6 +134,8 @@ export async function saveCartNotesAction(
     const cleanDate = sanitizeOrderText(deliveryDate, 30);
     const cleanSlot = sanitizeOrderText(deliveryTimeSlot, 100);
     const cleanDeliveryNotes = sanitizeOrderText(deliveryNotes, 500);
+    const cleanCardFrom = sanitizeOrderText(cardFrom, 100);
+    const cleanCardTo = sanitizeOrderText(cardTo, 100);
     const cleanCardMessage = sanitizeOrderText(cardMessage, 500);
 
     // 3. Strict delivery date and time slot enforcement
@@ -157,6 +163,23 @@ export async function saveCartNotesAction(
       };
     }
 
+    // 4. Strict "De:" and "Para:" card fields enforcement
+    if (!cleanCardFrom) {
+      return {
+        success: false,
+        cart: null,
+        error: 'Por favor indica de parte de quién es el detalle ("De:").'
+      };
+    }
+
+    if (!cleanCardTo) {
+      return {
+        success: false,
+        cart: null,
+        error: 'Por favor indica para quién es el detalle ("Para:").'
+      };
+    }
+
     const attributes: Array<{ key: string; value: string }> = [];
 
     // Delivery Date & Slot attributes
@@ -164,6 +187,8 @@ export async function saveCartNotesAction(
     attributes.push({ key: "Fecha de entrega", value: humanDate || cleanDate });
     attributes.push({ key: "Fecha de entrega (ISO)", value: cleanDate });
     attributes.push({ key: "Horario de entrega", value: cleanSlot });
+    attributes.push({ key: "De (Remitente)", value: cleanCardFrom });
+    attributes.push({ key: "Para (Destinatario)", value: cleanCardTo });
     if (cleanDeliveryNotes) {
       attributes.push({ key: "Instrucciones de entrega", value: cleanDeliveryNotes });
     }
@@ -183,14 +208,16 @@ export async function saveCartNotesAction(
     if (cleanSlot) {
       noteParts.push(`Horario: ${cleanSlot}`);
     }
+    noteParts.push(`De: ${cleanCardFrom}`);
+    noteParts.push(`Para: ${cleanCardTo}`);
+    if (cleanCardMessage) {
+      noteParts.push(`Dedicatoria: ${cleanCardMessage}`);
+    }
     if (acceptedTerms) {
       noteParts.push("Términos perecederos: Aceptados");
     }
     if (cleanDeliveryNotes) {
       noteParts.push(`Instrucciones: ${cleanDeliveryNotes}`);
-    }
-    if (cleanCardMessage) {
-      noteParts.push(`Dedicatoria: ${cleanCardMessage}`);
     }
     const combinedNote = noteParts.join(" | ");
 

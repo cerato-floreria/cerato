@@ -30,6 +30,10 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     setDeliveryTimeSlot,
     deliveryNotes,
     setDeliveryNotes,
+    cardFrom,
+    setCardFrom,
+    cardTo,
+    setCardTo,
     cardMessage,
     setCardMessage,
     saveNotesAndProceedToCheckout,
@@ -146,6 +150,32 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       setCheckoutError(
         'El horario de entrega seleccionado no está disponible (mínimo 24 hrs de anticipación). Por favor elige otro.',
       );
+      return;
+    }
+
+    if (!cardFrom.trim()) {
+      setHasAttemptedCheckout(true);
+      setCheckoutError(
+        'Por favor completa el campo obligatorio "De:" para la tarjeta de dedicatoria.',
+      );
+      const fromEl = document.getElementById('cart-card-from');
+      if (fromEl) {
+        fromEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        fromEl.focus();
+      }
+      return;
+    }
+
+    if (!cardTo.trim()) {
+      setHasAttemptedCheckout(true);
+      setCheckoutError(
+        'Por favor completa el campo obligatorio "Para:" para la tarjeta de dedicatoria.',
+      );
+      const toEl = document.getElementById('cart-card-to');
+      if (toEl) {
+        toEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        toEl.focus();
+      }
       return;
     }
 
@@ -552,28 +582,153 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   )}
                 </div>
 
-                {/* Delivery Instructions & Order-Level Dedication Section */}
+                {/* Dedicatoria para la Tarjeta (Campos 'De:' y 'Para:' obligatorios, dedicatoria opcional) */}
+                <div
+                  id="cart-card-section"
+                  className={`flex flex-col gap-3.5 bg-white p-4 rounded-2xl border transition-all mt-1 ${
+                    hasAttemptedCheckout && (!cardFrom.trim() || !cardTo.trim())
+                      ? 'border-red-300 ring-2 ring-red-400/20 shadow-xs'
+                      : 'border-primary/10 shadow-xs'
+                  }`}
+                >
+                  <div className="flex items-center justify-between border-b border-primary/10 pb-2">
+                    <div className="flex items-center gap-2 text-primary font-display font-semibold text-sm">
+                      <span className="material-symbols-outlined text-accent text-lg">
+                        drafts
+                      </span>
+                      <span>Tarjeta de Dedicatoria</span>
+                    </div>
+                    <span className="text-[10px] font-sans text-primary/60 italic">
+                      Cortesía de Cerato ✨
+                    </span>
+                  </div>
+
+                  {/* Campos De: y Para: (Obligatorios) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Campo 'De:' */}
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <label
+                          htmlFor="cart-card-from"
+                          className="text-[11px] font-sans font-semibold text-primary/90 flex items-center gap-1"
+                        >
+                          <span>De:</span>
+                          <span className="text-accent font-bold">*</span>
+                          <span className="text-[9px] text-accent/80 font-normal">
+                            (Obligatorio)
+                          </span>
+                        </label>
+                        <span className="text-[9px] text-primary/40">
+                          {cardFrom.length}/100
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        id="cart-card-from"
+                        value={cardFrom}
+                        onChange={(e) => {
+                          setCardFrom(e.target.value);
+                          if (e.target.value.trim() && checkoutError) {
+                            setCheckoutError(null);
+                          }
+                        }}
+                        maxLength={100}
+                        placeholder="Tu nombre / quién envía"
+                        className={`w-full text-xs font-sans px-3 py-2.5 rounded-xl border bg-background-light/40 text-primary placeholder:text-primary/30 focus:outline-none focus:bg-white transition-all shadow-xs ${
+                          hasAttemptedCheckout && !cardFrom.trim()
+                            ? 'border-red-400 ring-1 ring-red-400 bg-red-50/30'
+                            : 'border-primary/15 focus:ring-1 focus:ring-accent'
+                        }`}
+                      />
+                    </div>
+
+                    {/* Campo 'Para:' */}
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <label
+                          htmlFor="cart-card-to"
+                          className="text-[11px] font-sans font-semibold text-primary/90 flex items-center gap-1"
+                        >
+                          <span>Para:</span>
+                          <span className="text-accent font-bold">*</span>
+                          <span className="text-[9px] text-accent/80 font-normal">
+                            (Obligatorio)
+                          </span>
+                        </label>
+                        <span className="text-[9px] text-primary/40">
+                          {cardTo.length}/100
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        id="cart-card-to"
+                        value={cardTo}
+                        onChange={(e) => {
+                          setCardTo(e.target.value);
+                          if (e.target.value.trim() && checkoutError) {
+                            setCheckoutError(null);
+                          }
+                        }}
+                        maxLength={100}
+                        placeholder="Nombre de quien recibe"
+                        className={`w-full text-xs font-sans px-3 py-2.5 rounded-xl border bg-background-light/40 text-primary placeholder:text-primary/30 focus:outline-none focus:bg-white transition-all shadow-xs ${
+                          hasAttemptedCheckout && !cardTo.trim()
+                            ? 'border-red-400 ring-1 ring-red-400 bg-red-50/30'
+                            : 'border-primary/15 focus:ring-1 focus:ring-accent'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mensaje de dedicatoria (Opcional) */}
+                  <div className="flex flex-col gap-1.5 pt-1 border-t border-primary/5">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="cart-card-message"
+                        className="text-[11px] font-sans font-semibold text-primary/80 flex items-center gap-1"
+                      >
+                        <span>Mensaje de dedicatoria</span>
+                        <span className="text-[9px] text-primary/40 font-normal">
+                          (Opcional)
+                        </span>
+                      </label>
+                      <span className="text-[9px] text-primary/40">
+                        {cardMessage.length}/500
+                      </span>
+                    </div>
+                    <textarea
+                      id="cart-card-message"
+                      value={cardMessage}
+                      onChange={(e) => setCardMessage(e.target.value)}
+                      rows={2}
+                      maxLength={500}
+                      placeholder="Escribe aquí las palabras especiales que deseas que imprimamos en la tarjeta..."
+                      className="w-full text-xs font-sans p-2.5 rounded-xl border border-primary/15 bg-background-light/40 text-primary placeholder:text-primary/30 focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent resize-none transition-all shadow-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Instrucciones de entrega (Opcional) */}
                 <div className="flex flex-col gap-3 bg-white p-4 rounded-2xl border border-primary/10 shadow-xs mt-1">
                   <div className="flex items-center justify-between border-b border-primary/10 pb-2">
                     <div className="flex items-center gap-2 text-primary font-display font-semibold text-sm">
                       <span className="material-symbols-outlined text-accent text-lg">
                         local_shipping
                       </span>
-                      <span>Instrucciones y Dedicatoria</span>
+                      <span>Instrucciones de entrega</span>
                     </div>
                     <span className="text-[10px] font-sans text-primary/40 uppercase tracking-wider">
                       Opcional
                     </span>
                   </div>
 
-                  {/* Instrucciones de entrega */}
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
                       <label
                         htmlFor="cart-delivery-notes"
                         className="text-[11px] font-sans font-semibold text-primary/80 flex items-center gap-1"
                       >
-                        <span>Instrucciones de entrega</span>
+                        <span>Indicaciones para el repartidor</span>
                       </label>
                       <span className="text-[9px] text-primary/40">
                         {deliveryNotes.length}/500
@@ -588,37 +743,6 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                       placeholder="Referencias de la fachada, indicaciones para el repartidor (ej. Portón blanco, dejar con conserje)..."
                       className="w-full text-xs font-sans p-2.5 rounded-xl border border-primary/15 bg-background-light/40 text-primary placeholder:text-primary/30 focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent resize-none transition-all shadow-xs"
                     />
-                  </div>
-
-                  {/* Dedicatoria general para la tarjeta */}
-                  <div className="flex flex-col gap-1.5 pt-2 border-t border-primary/5">
-                    <div className="flex items-center justify-between">
-                      <label
-                        htmlFor="cart-card-message"
-                        className="text-[11px] font-sans font-semibold text-primary/80 flex items-center gap-1"
-                      >
-                        <span className="material-symbols-outlined text-sm text-accent">
-                          drafts
-                        </span>
-                        <span>Dedicatoria para la tarjeta</span>
-                      </label>
-                      <span className="text-[9px] text-primary/40">
-                        {cardMessage.length}/500
-                      </span>
-                    </div>
-                    <textarea
-                      id="cart-card-message"
-                      value={cardMessage}
-                      onChange={(e) => setCardMessage(e.target.value)}
-                      rows={2}
-                      maxLength={500}
-                      placeholder="Mensaje de felicitación para la tarjeta del pedido (De, Para y mensaje)..."
-                      className="w-full text-xs font-sans p-2.5 rounded-xl border border-primary/15 bg-background-light/40 text-primary placeholder:text-primary/30 focus:outline-none focus:bg-white focus:ring-1 focus:ring-accent resize-none transition-all shadow-xs"
-                    />
-                    <p className="text-[9px] text-primary/50 italic mt-0.5">
-                      Incluimos una tarjeta artesanal impresa personalizada sin
-                      costo adicional ✨
-                    </p>
                   </div>
                 </div>
 

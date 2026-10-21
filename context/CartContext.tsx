@@ -30,6 +30,10 @@ interface CartContextType {
   setDeliveryTimeSlot: (slot: string) => void;
   deliveryNotes: string;
   setDeliveryNotes: (notes: string) => void;
+  cardFrom: string;
+  setCardFrom: (from: string) => void;
+  cardTo: string;
+  setCardTo: (to: string) => void;
   cardMessage: string;
   setCardMessage: (msg: string) => void;
   saveNotesAndProceedToCheckout: (options?: { acceptedTerms?: boolean }) => Promise<{
@@ -50,6 +54,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [deliveryDate, setDeliveryDateState] = useState<string>("");
   const [deliveryTimeSlot, setDeliveryTimeSlotState] = useState<string>("");
   const [deliveryNotes, setDeliveryNotesState] = useState<string>("");
+  const [cardFrom, setCardFromState] = useState<string>("");
+  const [cardTo, setCardToState] = useState<string>("");
   const [cardMessage, setCardMessageState] = useState<string>("");
 
   const setDeliveryDate = useCallback((date: string) => {
@@ -70,6 +76,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {}
   }, []);
 
+  const setCardFrom = useCallback((from: string) => {
+    const value = typeof from === "string" ? from.slice(0, 100) : "";
+    setCardFromState(value);
+    try {
+      localStorage.setItem("cerato_card_from", value);
+    } catch {}
+  }, []);
+
+  const setCardTo = useCallback((to: string) => {
+    const value = typeof to === "string" ? to.slice(0, 100) : "";
+    setCardToState(value);
+    try {
+      localStorage.setItem("cerato_card_to", value);
+    } catch {}
+  }, []);
+
   const setCardMessage = useCallback((msg: string) => {
     const value = typeof msg === "string" ? msg.slice(0, 500) : "";
     setCardMessageState(value);
@@ -85,6 +107,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem("cerato_delivery_slot");
       const savedDel = localStorage.getItem("cerato_delivery_notes");
       if (savedDel) setDeliveryNotesState(savedDel);
+      const savedCardFrom = localStorage.getItem("cerato_card_from");
+      if (savedCardFrom) setCardFromState(savedCardFrom);
+      const savedCardTo = localStorage.getItem("cerato_card_to");
+      if (savedCardTo) setCardToState(savedCardTo);
       const savedCard = localStorage.getItem("cerato_card_message");
       if (savedCard) setCardMessageState(savedCard);
     } catch {}
@@ -112,6 +138,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           );
           if (delAttr?.value) {
             setDeliveryNotesState(delAttr.value);
+          }
+          const fromAttr = existingCart.attributes?.find(
+            (a) => a.key === "De (Remitente)"
+          );
+          if (fromAttr?.value) {
+            setCardFromState(fromAttr.value);
+          }
+          const toAttr = existingCart.attributes?.find(
+            (a) => a.key === "Para (Destinatario)"
+          );
+          if (toAttr?.value) {
+            setCardToState(toAttr.value);
           }
           const cardAttr = existingCart.attributes?.find(
             (a) => a.key === "Dedicatoria para la tarjeta"
@@ -209,6 +247,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
 
+    if (!cardFrom.trim()) {
+      return {
+        success: false,
+        error: 'Por favor indica de parte de quién es el detalle ("De:").'
+      };
+    }
+
+    if (!cardTo.trim()) {
+      return {
+        success: false,
+        error: 'Por favor indica para quién es el detalle ("Para:").'
+      };
+    }
+
     setIsLoading(true);
     try {
       const result = await saveCartNotesAction({
@@ -216,6 +268,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deliveryDate,
         deliveryTimeSlot,
         deliveryNotes: deliveryNotes.trim(),
+        cardFrom: cardFrom.trim(),
+        cardTo: cardTo.trim(),
         cardMessage: cardMessage.trim(),
         acceptedTerms: Boolean(options?.acceptedTerms)
       });
@@ -266,6 +320,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setDeliveryTimeSlot,
         deliveryNotes,
         setDeliveryNotes,
+        cardFrom,
+        setCardFrom,
+        cardTo,
+        setCardTo,
         cardMessage,
         setCardMessage,
         saveNotesAndProceedToCheckout
