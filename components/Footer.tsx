@@ -42,7 +42,7 @@ const Footer = () => {
           <div className="flex flex-col gap-6">
             <Link href="/" className="inline-block group/logo">
               <Image
-                src="/Logo-Color-2.png"
+                src="/Logo-Color-1.png"
                 alt="Cerato Arte Floral"
                 width={200}
                 height={95}

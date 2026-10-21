@@ -287,5 +287,11 @@ body {
   will-change: transform, opacity;
 }
 
+/* Zero-FOUC Initial Loader Controls */
+html.cerato-loader-done #cerato-initial-loader {
+  display: none !important;
+}
 
-
+html.cerato-loading body {
+  overflow: hidden !important;
+}

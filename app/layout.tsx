@@ -106,6 +106,14 @@ export default function RootLayout({
       className={`${notoSerif.variable} ${notoSans.variable} antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          id="cerato-loader-script"
+          dangerouslySetInnerHTML={{
+            __html: `try{var p=window.matchMedia('(prefers-reduced-motion: reduce)').matches;var s=sessionStorage.getItem('cerato_first_visit_loader_shown');if(s||p){document.documentElement.classList.add('cerato-loader-done');}else{document.documentElement.classList.add('cerato-loading');}}catch(e){document.documentElement.classList.add('cerato-loader-done');}`,
+          }}
+        />
+      </head>
       <body
         className="min-h-screen flex flex-col font-sans selection:bg-primary/20 selection:text-primary"
         suppressHydrationWarning

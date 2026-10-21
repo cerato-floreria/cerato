@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 
 // Static deterministic petal positions and variations (avoids hydration mismatch)
 interface PetalConfig {
@@ -83,8 +84,6 @@ const PetalIcon = ({
 const SESSION_STORAGE_KEY = 'cerato_first_visit_loader_shown';
 
 export default function InitialLoader() {
-  const [mounted, setMounted] = useState(false);
-  const [shouldRender, setShouldRender] = useState(false);
   const [phase, setPhase] = useState<'pulse' | 'rain' | 'curtain' | 'done'>('pulse');
 
   // Dismiss and clean up completely
@@ -92,68 +91,63 @@ export default function InitialLoader() {
     setPhase('curtain');
     setTimeout(() => {
       setPhase('done');
-      setShouldRender(false);
+      document.documentElement.classList.add('cerato-loader-done');
+      document.documentElement.classList.remove('cerato-loading');
       document.body.style.overflow = '';
     }, 750);
   }, []);
 
   useEffect(() => {
-    setMounted(true);
-
     try {
       // 1. Only show once per session to maintain optimal UX
       const alreadyShown = sessionStorage.getItem(SESSION_STORAGE_KEY);
-      if (alreadyShown) {
-        return;
-      }
-
-      // 2. Accessibility: respect users who prefer reduced motion
       const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (prefersReduced) {
-        sessionStorage.setItem(SESSION_STORAGE_KEY, 'true');
+      if (alreadyShown || prefersReduced) {
+        document.documentElement.classList.add('cerato-loader-done');
+        document.documentElement.classList.remove('cerato-loading');
+        setPhase('done');
         return;
       }
 
       // Mark as shown immediately
       sessionStorage.setItem(SESSION_STORAGE_KEY, 'true');
-      setShouldRender(true);
-
-      // Lock body scroll while loader is visible
-      document.body.style.overflow = 'hidden';
+      document.documentElement.classList.add('cerato-loading');
 
       // Choreographed timeline:
-      // T = 0.0s - 1.8s : Logo pulse & breathe
-      // T = 1.8s        : Petal rain cascade starts
-      // T = 2.4s        : Curtain slides down revealing page
-      // T = 3.2s        : Unmount completely from DOM
+      // T = 0.0s - 2.8s : Logo pulse & breathe (+1s duration)
+      // T = 2.8s        : Petal rain cascade starts
+      // T = 3.4s        : Curtain slides down revealing page
+      // T = 4.25s       : Unmount completely from DOM
       const timerRain = setTimeout(() => {
         setPhase('rain');
-      }, 1800);
+      }, 2800);
 
       const timerCurtain = setTimeout(() => {
         setPhase('curtain');
-      }, 2400);
+      }, 3400);
 
       const timerDone = setTimeout(() => {
         setPhase('done');
-        setShouldRender(false);
+        document.documentElement.classList.add('cerato-loader-done');
+        document.documentElement.classList.remove('cerato-loading');
         document.body.style.overflow = '';
-      }, 3250);
+      }, 4250);
 
       return () => {
         clearTimeout(timerRain);
         clearTimeout(timerCurtain);
         clearTimeout(timerDone);
+        document.documentElement.classList.add('cerato-loader-done');
+        document.documentElement.classList.remove('cerato-loading');
         document.body.style.overflow = '';
       };
     } catch {
-      // Graceful fallback for strict privacy mode
-      setShouldRender(false);
+      setPhase('done');
     }
   }, []);
 
-  // Server-side rendering safe: Return null immediately so SEO crawlers see complete underlying page
-  if (!mounted || !shouldRender || phase === 'done') {
+  // When animation finishes, completely unmount from DOM
+  if (phase === 'done') {
     return null;
   }
 
@@ -161,11 +155,12 @@ export default function InitialLoader() {
 
   return (
     <div
+      id="cerato-initial-loader"
       role="status"
       aria-live="polite"
       aria-label="Cargando experiencia Cerato Arte Floral"
       onClick={dismissLoader}
-      className={`fixed inset-0 z-[9999] cursor-pointer select-none transition-transform duration-700 ease-[cubic-bezier(0.77,0,0.175,1)] ${
+      className={`fixed inset-0 z-[9999] select-none transition-transform duration-700 ease-[cubic-bezier(0.77,0,0.175,1)] ${
         isCurtainDown ? 'translate-y-full pointer-events-none' : 'translate-y-0'
       }`}
       style={{
@@ -186,19 +181,6 @@ export default function InitialLoader() {
       {/* Subtle background ambient lighting glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.08)_0%,transparent_70%)] pointer-events-none" />
 
-      {/* Skip button for optimal user experience */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          dismissLoader();
-        }}
-        className="absolute top-6 right-6 z-20 text-[10px] font-sans font-bold uppercase tracking-[0.25em] text-white/50 hover:text-accent-gold transition-colors py-2 px-3 rounded-full border border-white/10 hover:border-accent-gold/40 cursor-pointer"
-        aria-label="Saltar animación de bienvenida"
-      >
-        Saltar →
-      </button>
-
       {/* Central Large Logo with breathing pulse effect */}
       <div
         className={`absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-700 ${
@@ -206,22 +188,26 @@ export default function InitialLoader() {
         }`}
       >
         <div className="relative flex flex-col items-center">
-          {/* Ethereal golden / lilac halo behind flower */}
-          <div className="absolute -inset-10 bg-radial from-accent-gold/20 via-[#C4B5FD]/10 to-transparent blur-2xl rounded-full pointer-events-none" />
-
-          {/* Large Flower Logo */}
-          <div className="relative animate-cerato-pulse">
-            <PetalIcon size={130} fill="#E9D5FF" />
+          {/* Pulsing Flower (Only this element pulses) */}
+          <div className="relative flex items-center justify-center">
+            {/* Luminous halo concentrated around the pulsing flower */}
+            <div className="absolute -inset-6 bg-radial from-accent-gold/25 via-[#C4B5FD]/15 to-transparent blur-xl rounded-full pointer-events-none" />
+            
+            <div className="relative animate-cerato-pulse">
+              <PetalIcon size={100} fill="#E9D5FF" />
+            </div>
           </div>
 
-          {/* Brand Name Typography */}
-          <div className="mt-6 flex flex-col items-center text-center">
-            <span className="font-display text-2xl sm:text-3xl font-bold tracking-[0.35em] text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
-              CERATO
-            </span>
-            <span className="text-[10px] sm:text-[11px] font-sans font-bold uppercase tracking-[0.45em] text-accent-gold mt-1 drop-shadow-sm">
-              Arte Floral
-            </span>
+          {/* Original Brand Logo Typography (without flower, stays static) */}
+          <div className="mt-4 sm:mt-5 flex items-center justify-center">
+            <Image
+              src="/logo-text-1.png"
+              alt="Cerato Arte Floral"
+              width={720}
+              height={235}
+              priority
+              className="w-56 sm:w-64 md:w-72 h-auto object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.4)]"
+            />
           </div>
         </div>
       </div>
