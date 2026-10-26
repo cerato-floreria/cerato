@@ -3,8 +3,10 @@
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-import { toPascalCase } from '@/lib/shopify';
+import { toPascalCase, slugifyCategory } from '@/lib/shopify';
+import SoldOutBadge from './SoldOutBadge';
 
 export interface ProductVariantItem {
   id: string;
@@ -24,6 +26,8 @@ interface ProductDetailProps {
     price: number | string;
     currency: string;
     category: string;
+    categories?: string[];
+    fromCategorySlug?: string;
     tag?: string;
     description: string;
     longDescription?: string;
@@ -33,7 +37,7 @@ interface ProductDetailProps {
   };
 }
 
-const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
+const ProductDetailContent: React.FC<ProductDetailProps> = ({ product }) => {
   const initialVariantId =
     product.variants?.[0]?.id || product.variantId || product.id || '';
   const [selectedVariantId, setSelectedVariantId] =
@@ -57,6 +61,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     ? activeVariant.availableForSale
     : product.availableForSale !== false;
 
+  const categoryDisplay = useMemo(() => {
+    const raw = product.category || product.tag || 'Arte Floral Cerato';
+    return raw.replace(/^(cat\d*|type\d*):\s*/i, '').trim();
+  }, [product.category, product.tag]);
+
   const hasMultipleVariants = useMemo(() => {
     if (!product.variants || product.variants.length <= 1) return false;
     if (
@@ -69,11 +78,52 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     return true;
   }, [product.variants]);
 
+  const searchParams = useSearchParams();
+  const fromParam =
+    searchParams.get('from') ||
+    searchParams.get('cat') ||
+    product.fromCategorySlug;
+
+  const resolvedCategory = useMemo(() => {
+    if (fromParam) {
+      const decodedFrom = decodeURIComponent(fromParam).toLowerCase().trim();
+      // Match against product.categories if available
+      if (product.categories && product.categories.length > 0) {
+        const found = product.categories.find(
+          (c) => slugifyCategory(c) === decodedFrom
+        );
+        if (found) return found;
+      }
+      // If product.category matches
+      if (product.category && slugifyCategory(product.category) === decodedFrom) {
+        return product.category;
+      }
+      // Friendly mappings for category slugs
+      if (decodedFrom === 'que-quieres-decir') return '¿Qué quieres decir?';
+      if (decodedFrom === 'flores-y-plantas') return 'Flores y Plantas';
+      if (decodedFrom === 'ocasiones') return 'Ocasiones';
+    }
+    return product.category || 'Flores y Plantas';
+  }, [fromParam, product.categories, product.category]);
+
   const displayName = useMemo(() => toPascalCase(product.name), [product.name]);
   const displayCategory = useMemo(
-    () => toPascalCase(product.category || 'Colección Cerato'),
-    [product.category],
+    () => toPascalCase(resolvedCategory),
+    [resolvedCategory],
   );
+
+  const categorySlug = useMemo(() => {
+    if (fromParam) {
+      return decodeURIComponent(fromParam).toLowerCase().trim();
+    }
+    const slug = slugifyCategory(resolvedCategory);
+    if (!slug || slug === 'coleccion-cerato') {
+      return 'flores-y-plantas';
+    }
+    return slug;
+  }, [fromParam, resolvedCategory]);
+
+  const catalogUrl = `/categoria/${categorySlug}`;
 
   // Split description at the first period:
   // Part 1 -> Main italic quote (first sentence)
@@ -100,10 +150,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     };
   }, [product.description, product.longDescription]);
 
-  const increment = () => setQuantity((q: number) => q + 1);
-  const decrement = () => setQuantity((q: number) => (q > 1 ? q - 1 : 1));
+  const increment = () => {
+    if (!isAvailable) return;
+    setQuantity((q: number) => q + 1);
+  };
+  const decrement = () => {
+    if (!isAvailable) return;
+    setQuantity((q: number) => (q > 1 ? q - 1 : 1));
+  };
 
   const handleAddToCart = () => {
+    if (!isAvailable) return;
     const targetVariantId =
       activeVariant?.id ||
       product.variantId ||
@@ -128,6 +185,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     };
   }, [zoomedImage]);
 
+  const activeVariantImage = activeVariant?.image;
+
   // Display only real available distinct images, placing the active variant's image at the top if selected
   const displayImages = useMemo(() => {
     const baseImages =
@@ -135,35 +194,64 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
         ? product.images
         : ['https://images.unsplash.com/photo-1519340333755-5072120ef3aa'];
 
-    if (activeVariant?.image) {
+    if (activeVariantImage) {
       const withoutVariantImg = baseImages.filter(
-        (img) => img !== activeVariant.image,
+        (img) => img !== activeVariantImage,
       );
-      return [activeVariant.image, ...withoutVariantImg];
+      return [activeVariantImage, ...withoutVariantImg];
     }
     return baseImages;
-  }, [product.images, activeVariant?.image]);
+  }, [product.images, activeVariantImage]);
 
   return (
-    <main className="bg-background-light pt-28 pb-16 mb-6 lg:pt-32">
+    <div className="bg-background-light pt-28 pb-16 mb-6 lg:pt-32">
       <div className="mx-auto max-w-[1440px] px-6 lg:px-20">
+        {/* Top Navigation Bar: Back to Catalog Button & Clickable Breadcrumbs */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-primary/5">
+          <Link
+            href={catalogUrl}
+            className="group inline-flex items-center gap-2 rounded-xl border border-primary/10 bg-white/90 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-primary shadow-xs backdrop-blur-sm transition-all hover:border-accent-gold hover:bg-white hover:text-accent-gold hover:shadow-md active:scale-95 cursor-pointer"
+            aria-label={`Regresar al catálogo de ${displayCategory}`}
+          >
+            <span className="material-symbols-outlined text-lg transition-transform group-hover:-translate-x-1">
+              arrow_back
+            </span>
+            <span>Volver al Catálogo</span>
+          </Link>
+
+          {/* Clickable Breadcrumbs */}
+          <nav
+            aria-label="Ruta de navegación"
+            className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-gray-500"
+          >
+            <Link
+              className="transition-colors hover:text-primary hover:underline underline-offset-2"
+              href="/"
+            >
+              Inicio
+            </Link>
+            <span className="material-symbols-outlined text-[13px] text-gray-400">
+              chevron_right
+            </span>
+            <Link
+              href={catalogUrl}
+              className="transition-colors hover:text-primary hover:underline underline-offset-2 font-medium"
+              title={`Ver catálogo de ${displayCategory}`}
+            >
+              {displayCategory}
+            </Link>
+            <span className="material-symbols-outlined text-[13px] text-gray-400">
+              chevron_right
+            </span>
+            <span className="font-bold text-primary truncate max-w-[150px] sm:max-w-[260px] md:max-w-none">
+              {displayName}
+            </span>
+          </nav>
+        </div>
+
         <div className="flex flex-col gap-10 lg:flex-row lg:gap-20 items-start">
-          {/* Left Section: Breadcrumbs & Dynamic Image Gallery */}
-          <div className="w-full lg:w-[55%] sticky top-28">
-            {/* Breadcrumbs */}
-            <nav className="mb-4 flex items-center gap-0.5 text-[11px] font-medium tracking-wide text-gray-500">
-              <Link className="transition-colors hover:text-primary" href="/">
-                Inicio
-              </Link>
-              <span className="material-symbols-outlined text-[10px]">
-                chevron_right
-              </span>
-              <span className="text-gray-500">{displayCategory}</span>
-              <span className="material-symbols-outlined text-[10px]">
-                chevron_right
-              </span>
-              <span className="font-bold text-primary">{displayName}</span>
-            </nav>
+          {/* Left Section: Dynamic Image Gallery */}
+          <div className="w-full lg:w-[55%] lg:sticky lg:top-28">
 
             {/* Dynamic Gallery: Adaptive for 1 image or multiple images */}
             {displayImages.length === 1 ? (
@@ -185,6 +273,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                       fullscreen
                     </span>
                   </div>
+                  {!isAvailable && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <SoldOutBadge />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -208,6 +301,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                         fullscreen
                       </span>
                     </div>
+                    {!isAvailable && idx === 0 && (
+                      <div className="absolute top-3.5 right-3.5 z-10">
+                        <SoldOutBadge />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -217,16 +315,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
           {/* Right Section: Product Info */}
           <div className="flex flex-col justify-center py-6 w-full lg:w-[45%]">
             <div className="max-w-md">
-              {/* Tag & Availability Badge */}
-              <div className="flex items-center gap-3 mb-6">
+              {/* Category */}
+              <div className="mb-6">
                 <span className="block text-[10px] font-bold uppercase tracking-[0.4em] text-gray-500">
-                  {product.tag || 'Arte Floral Cerato'}
+                  {categoryDisplay}
                 </span>
-                {!isAvailable && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[9px] font-bold uppercase tracking-wider">
-                    Agotado
-                  </span>
-                )}
               </div>
 
               {/* Title - PascalCase */}
@@ -310,7 +403,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
                 <div className="mb-10 lg:mb-16 space-y-8">
                   {primaryDescription && (
                     <p className="font-display text-lg italic leading-relaxed text-primary sm:text-xl lg:text-2xl">
-                      "{primaryDescription}"
+                      &ldquo;{primaryDescription}&rdquo;
                     </p>
                   )}
 
@@ -327,23 +420,49 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
 
               {/* Actions: Quantity & CTA */}
               <div className="flex items-center gap-6 pt-4">
-                <div className="flex h-16 items-center overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div
+                  className={`flex h-16 items-center overflow-hidden rounded-xl border transition-all ${
+                    !isAvailable
+                      ? 'border-gray-200 bg-gray-100/80 opacity-50 cursor-not-allowed select-none'
+                      : 'border-gray-200 bg-white shadow-sm'
+                  }`}
+                  aria-disabled={!isAvailable}
+                >
                   <button
+                    type="button"
                     onClick={decrement}
-                    disabled={!isAvailable}
-                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:opacity-30"
+                    disabled={!isAvailable || quantity <= 1}
+                    aria-label="Disminuir cantidad"
+                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:opacity-30"
                   >
                     <span className="material-symbols-outlined text-sm">
                       remove
                     </span>
                   </button>
-                  <span className="font-display flex h-full w-12 items-center justify-center text-lg font-bold text-primary">
-                    {quantity}
-                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={isAvailable ? quantity : 0}
+                    onChange={(e) => {
+                      if (!isAvailable) return;
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val) && val >= 1) {
+                        setQuantity(val);
+                      } else if (e.target.value === '') {
+                        setQuantity(1);
+                      }
+                    }}
+                    disabled={!isAvailable}
+                    aria-label="Cantidad de productos"
+                    className="font-display h-full w-14 text-center text-lg font-bold text-primary bg-transparent focus:outline-none disabled:text-gray-400 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
                   <button
+                    type="button"
                     onClick={increment}
                     disabled={!isAvailable}
-                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:opacity-30"
+                    aria-label="Aumentar cantidad"
+                    className="flex h-full w-12 items-center justify-center text-primary transition-colors hover:bg-gray-50 cursor-pointer disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:opacity-30"
                   >
                     <span className="material-symbols-outlined text-sm">
                       add
@@ -387,6 +506,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
         <button
           className="absolute right-6 top-6 z-[210] flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-all hover:bg-red-700 hover:scale-110 active:scale-95 cursor-pointer"
           onClick={() => setZoomedImage(null)}
+          aria-label="Cerrar vista ampliada"
         >
           <span className="material-symbols-outlined text-2xl font-bold">
             close
@@ -411,7 +531,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
           )}
         </div>
       </div>
-    </main>
+    </div>
+  );
+};
+
+const ProductDetail: React.FC<ProductDetailProps> = (props) => {
+  return (
+    <React.Suspense fallback={null}>
+      <ProductDetailContent {...props} />
+    </React.Suspense>
   );
 };
 

@@ -5,12 +5,19 @@ import {
   CategorySubItem,
   TaxonomyData,
   CategoryTypePair,
+  SeasonalCollectionData,
 } from './types';
-import { getProductsQuery, getProductByHandleQuery } from './queries/product';
+import {
+  getProductsQuery,
+  getProductByHandleQuery,
+  getCollectionsQuery,
+} from './queries/product';
 import {
   createCartMutation,
   addToCartMutation,
   updateCartItemMutation,
+  updateCartAttributesMutation,
+  updateCartNoteMutation,
   removeFromCartMutation,
   getCartQuery,
 } from './queries/cart';
@@ -25,7 +32,7 @@ export async function shopifyFetch<T>({
   cache = 'force-cache',
 }: {
   query: string;
-  variables?: Record<string, any>;
+  variables?: Record<string, unknown>;
   tags?: string[];
   cache?: RequestCache;
 }): Promise<{ status: number; body: T } | never> {
@@ -39,7 +46,7 @@ export async function shopifyFetch<T>({
     !storefrontAccessToken || storefrontAccessToken.includes('placeholder');
 
   if (isInvalidToken) {
-    return { status: 401, body: null as any };
+    return { status: 401, body: null as unknown as T };
   }
 
   let attempt = 0;
@@ -76,18 +83,24 @@ export async function shopifyFetch<T>({
         status: result.status,
         body: body.data,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      if (
+        (error as { digest?: string })?.digest === 'DYNAMIC_SERVER_USAGE' ||
+        (error as Error)?.message?.includes('Dynamic server usage')
+      ) {
+        throw error;
+      }
       attempt++;
       if (attempt >= maxAttempts) {
         console.error('Shopify fetch failed after max retries:', error);
-        return { status: 500, body: null as any };
+        return { status: 500, body: null as unknown as T };
       }
       const waitMs = Math.pow(2, attempt) * 500;
       await new Promise((res) => setTimeout(res, waitMs));
     }
   }
 
-  return { status: 500, body: null as any };
+  return { status: 500, body: null as unknown as T };
 }
 
 /**
@@ -279,9 +292,11 @@ export function toPascalCase(str: string): string {
     .split(/([\s-_/()]+)/)
     .map((word) => {
       if (!word) return '';
-      if (word === 'xl') return 'XL';
-      if (word === 'xxl') return 'XXL';
-      return word.charAt(0).toUpperCase() + word.slice(1);
+      const clean = word.replace(/\P{L}/gu, '');
+      if (clean === 'xl') return word.replace(/xl/i, 'XL');
+      if (clean === 'xxl') return word.replace(/xxl/i, 'XXL');
+      // Capitalize the first Unicode letter, preserving leading punctuation like ¿, ¡, (, ", etc.
+      return word.replace(/^(\P{L}*)(\p{L})/u, (_, p1, p2) => p1 + p2.toUpperCase());
     })
     .join('');
 }
@@ -326,6 +341,77 @@ export async function getProductByHandle(
 
   const mock = getMockProducts().find((p) => p.handle === handle);
   return mock ? parseProductTags(mock) : null;
+}
+
+/**
+ * Fetches the active seasonal collection whose title begins with "temporada: {nombre}".
+ * Returns null if no active seasonal collection is found or if it has no products.
+ */
+export async function getSeasonalCollection(): Promise<SeasonalCollectionData | null> {
+  const response = await shopifyFetch<{
+    collections: {
+      edges: Array<{
+        node: {
+          id: string;
+          handle: string;
+          title: string;
+          description: string;
+          descriptionHtml?: string;
+          products: {
+            edges: Array<{ node: ShopifyProduct }>;
+          };
+        };
+      }>;
+    };
+  }>({
+    query: getCollectionsQuery,
+    tags: ['collections'],
+    cache: 'force-cache',
+  });
+
+  if (response?.body?.collections?.edges) {
+    const collections = response.body.collections.edges.map((edge) => edge.node);
+    const seasonal = collections.find((c) => /^temporada:\s*/i.test(c.title));
+
+    if (seasonal) {
+      const seasonName = seasonal.title.replace(/^temporada:\s*/i, '').trim();
+      const products = seasonal.products.edges.map((edge) =>
+        parseProductTags(edge.node),
+      );
+
+      if (products.length > 0) {
+        return {
+          id: seasonal.id,
+          handle: seasonal.handle,
+          title: seasonal.title,
+          seasonName,
+          description: seasonal.description || '',
+          descriptionHtml: seasonal.descriptionHtml || '',
+          products,
+        };
+      }
+    }
+  }
+
+  // Fallback: check taxonomy or mock products
+  const all = await getAllProducts();
+  const taxonomy = buildTaxonomy(all);
+  const seasonEntries = Array.from(taxonomy.temporadaCollections.entries());
+  if (seasonEntries.length > 0) {
+    const [seasonKey, seasonProducts] = seasonEntries[0];
+    if (seasonProducts.length > 0) {
+      return {
+        id: `temporada-${seasonKey}`,
+        handle: `temporada-${seasonKey}`,
+        title: `temporada: ${seasonKey}`,
+        seasonName: seasonKey,
+        description: '',
+        products: seasonProducts,
+      };
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -424,6 +510,93 @@ export async function getCart(cartId: string): Promise<Cart | null> {
     cache: 'no-store',
   });
   return res?.body?.cart || null;
+}
+
+export async function updateCartAttributes(
+  cartId: string,
+  attributes: Array<{ key: string; value: string }>,
+  note?: string,
+): Promise<{ cart: Cart | null; userErrors?: Array<{ field: string[]; message: string }> }> {
+  let updatedCart: Cart | null = null;
+  const allUserErrors: Array<{ field: string[]; message: string }> = [];
+
+  if (attributes && attributes.length > 0) {
+    const res = await shopifyFetch<{
+      cartAttributesUpdate: {
+        cart: Cart;
+        userErrors: Array<{ field: string[]; message: string }>;
+      };
+    }>({
+      query: updateCartAttributesMutation,
+      variables: { cartId, attributes },
+      cache: 'no-store',
+    });
+
+    if (res?.body?.cartAttributesUpdate?.userErrors?.length) {
+      console.error(
+        'Shopify updateCartAttributes userErrors:',
+        res.body.cartAttributesUpdate.userErrors,
+      );
+      allUserErrors.push(...res.body.cartAttributesUpdate.userErrors);
+    } else if (res?.body?.cartAttributesUpdate?.cart) {
+      updatedCart = res.body.cartAttributesUpdate.cart;
+    }
+  }
+
+  if (typeof note === 'string') {
+    const res = await shopifyFetch<{
+      cartNoteUpdate: {
+        cart: Cart;
+        userErrors: Array<{ field: string[]; message: string }>;
+      };
+    }>({
+      query: updateCartNoteMutation,
+      variables: { cartId, note },
+      cache: 'no-store',
+    });
+
+    if (res?.body?.cartNoteUpdate?.userErrors?.length) {
+      console.error(
+        'Shopify updateCartNote userErrors:',
+        res.body.cartNoteUpdate.userErrors,
+      );
+      allUserErrors.push(...res.body.cartNoteUpdate.userErrors);
+    } else if (res?.body?.cartNoteUpdate?.cart) {
+      updatedCart = res.body.cartNoteUpdate.cart;
+    }
+  }
+
+  return { cart: updatedCart, userErrors: allUserErrors };
+}
+
+export async function updateCartLines(
+  cartId: string,
+  lines: Array<{
+    id: string;
+    quantity?: number;
+    attributes?: Array<{ key: string; value: string }>;
+  }>,
+): Promise<{ cart: Cart | null; userErrors?: Array<{ field: string[]; message: string }> }> {
+  const res = await shopifyFetch<{
+    cartLinesUpdate: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
+  }>({
+    query: updateCartItemMutation,
+    variables: {
+      cartId,
+      lines,
+    },
+    cache: 'no-store',
+  });
+
+  if (res?.body?.cartLinesUpdate?.userErrors?.length) {
+    console.error('Shopify updateCartLines userErrors:', res.body.cartLinesUpdate.userErrors);
+    return { cart: null, userErrors: res.body.cartLinesUpdate.userErrors };
+  }
+
+  return { cart: res?.body?.cartLinesUpdate?.cart || null, userErrors: [] };
 }
 
 /**

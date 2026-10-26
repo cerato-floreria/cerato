@@ -7,6 +7,7 @@ import { Metadata } from "next";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -38,8 +39,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function CategoryPage({ params }: PageProps) {
+export default async function CategoryPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const sParams = searchParams ? await searchParams : {};
+  const initialSubtype = (sParams.subtipo || sParams.sub || sParams.tipo || "") as string;
+
   const products = await getProductsAction();
   const taxonomy = buildTaxonomy(products);
 
@@ -56,6 +60,7 @@ export default async function CategoryPage({ params }: PageProps) {
       categoryName={matchedCat.name}
       subtypes={matchedCat.subtypes}
       allProducts={products}
+      initialSubtype={initialSubtype}
     />
   );
 }
