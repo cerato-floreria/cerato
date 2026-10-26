@@ -86,8 +86,8 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
       {/* Background Image & Overlay optimized with next/image */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <Image
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7SQC5j2SEbPXUk-uVjoIycUIAcdLn5giMTeCvOzKcaxZaGipSYEDgUFtI87kuy6f9b7RXXzuOBPvluWIhX1yaMr08jSkZqWEgoVqgWEd4ZtBNutaXlmAIAex4WOjgX-fp5lZPGpwRJTcEB2whflMKpzxhJdk4wg8304iHUyX6VdP_tMhrOl_Cgfn2v68C3bGgHrZQ76SYejV12M9ut2nQQyOE9xVU96CsKabi79TALniCPrmEfBTpWzPFNV6KrGX54DLutPIp5Q"
-          alt="Cerato Floral Arreglo de Lujo"
+          src="/Portada_principal.PNG"
+          alt="Cerato Floral - Lo extraordinario florece aquí"
           fill
           priority
           fetchPriority="high"
@@ -102,15 +102,14 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
         {/* Text Section - Left Aligned */}
         <div className="max-w-4xl text-left animate-fade-in lg:mt-0">
           <span className="mb-4 block text-[10px] font-bold uppercase tracking-[0.5em] text-accent-gold text-glow lg:mb-6 lg:text-sm">
-            Exclusividad en cada detalle
+            LO EXTRAORDINARIO FLORECE AQUÍ
           </span>
           <h1 className="mb-6 font-display text-[32px] sm:text-[42px] font-light leading-[1.1] text-white md:text-6xl lg:mb-8 lg:text-[64px]">
-            Arte Floral que <br />
-            <span className="italic font-normal text-cream">Enamora</span>
+            ¿A quién quieres <br />
+            <span className="italic font-normal text-cream">hacer sonreír?</span>
           </h1>
           <p className="mb-8 max-w-2xl text-base font-light leading-relaxed text-white/90 md:text-lg lg:mb-12 lg:text-xl">
-            Diseños premium curados por expertos para transformar sus momentos
-            especiales en recuerdos inolvidables.
+            Para celebrar, agradecer o sorprender. Todo es mejor con flores.
           </p>
         </div>
 
@@ -121,7 +120,7 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
               href="/categoria/flores-y-plantas"
               className="group flex h-14 items-center justify-center gap-4 rounded-xl bg-primary px-8 text-[10px] font-bold tracking-[0.2em] text-white shadow-2xl transition-all duration-500 hover:bg-primary-dark hover:scale-105 md:h-16 md:px-10 md:text-xs"
             >
-              EXPLORAR COLECCIÓN DE FLORES
+              ENCUENTRA EL DETALLE PERFECTO
               <span className="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">
                 arrow_forward
               </span>

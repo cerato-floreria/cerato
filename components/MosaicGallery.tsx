@@ -11,10 +11,11 @@ interface MosaicGalleryProps {
 }
 
 // 9 mosaic items matching the exact 9-slot asymmetric grid layout
+// 9 mosaic items matching the exact 9-slot asymmetric grid layout
 const DEFAULT_ITEMS = [
   {
     name: "Felicidades",
-    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image.png?v=1789105616",
+    image: "/Felicidades.jpg",
     link: "/categoria/que-quieres-decir?subtipo=Felicidades",
   },
   {
@@ -24,12 +25,12 @@ const DEFAULT_ITEMS = [
   },
   {
     name: "Te Amo",
-    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_f6d131ee-0717-402d-810a-64ffa4ff532f.png?v=1789106189",
+    image: "/Te_amo.png",
     link: "/categoria/que-quieres-decir?subtipo=Te+Amo",
   },
   {
     name: "Feliz Aniversario",
-    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_47b84d2e-848d-4d4b-89f9-56548634a3bf.png?v=1789106422",
+    image: "/Feliz_aniversario.jpg",
     link: "/categoria/que-quieres-decir?subtipo=Feliz+Aniversario",
   },
   {
@@ -39,22 +40,22 @@ const DEFAULT_ITEMS = [
   },
   {
     name: "Te Acompaño",
-    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_f436fcfc-5031-4e20-9315-7b32c55ede46.png?v=1789709077",
+    image: "/Te_acompano.png",
     link: "/categoria/que-quieres-decir?subtipo=Te+Acompa%C3%B1o",
   },
   {
     name: "Gracias",
-    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_6201f723-e7a6-4dd5-8c1d-6544fbb57600.png?v=1789709190",
+    image: "/Gracias.png",
     link: "/categoria/que-quieres-decir?subtipo=Gracias",
   },
   {
     name: "Bienvenido Al Mundo",
-    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_74ea334a-a0f6-4bc3-8dde-21782087a460.png?v=1789710566",
+    image: "/Bienvenido_al_mundo.jpg",
     link: "/categoria/que-quieres-decir?subtipo=Bienvenido+Al+Mundo",
   },
   {
     name: "Ver Todo",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBv_3_bmSdtd0GnSh5EHK0u0_H56GG3Kf_w-IDOHKIyW-PPwNs_tZR-Rs7AndhnNT7ubLRmz8qDyrlrrfnj-EH2def2GiQ1GRGxUojM7JR3zdP78DT7vnUixzilHMco80LOsqm2fXJPnZjKI5eLlSl7Pbu-uPVTSPvlj_5VfgN1PyYQnSJYTZniJczRyBXhjFV64tzWezEJMtRKx8f_4xWsGtXDnzwh78Lfyc61A-AVBsf0NAx763M53ybxtEfrVUPPt9vK3AjLQw",
+    image: "/Ver_todo.jpg",
     link: "/categoria/que-quieres-decir",
   },
 ];
@@ -76,7 +77,7 @@ const MOSAIC_CLASSES = [
 ];
 
 const MosaicGallery: React.FC<MosaicGalleryProps> = ({ subcategories = [] }) => {
-  // Build items from dynamic subcategories with fallback
+  // Build items from dynamic subcategories with curated fallback
   const items = React.useMemo(() => {
     if (subcategories && subcategories.length > 0) {
       const dynamicList = subcategories.map((sub) => {
@@ -87,9 +88,9 @@ const MosaicGallery: React.FC<MosaicGalleryProps> = ({ subcategories = [] }) => 
           (d) => d.name.toLowerCase() === sub.type.toLowerCase()
         );
         const img =
+          fallbackMatch?.image ||
           productWithImage?.featuredImage?.url ||
           productWithImage?.images?.edges?.[0]?.node?.url ||
-          fallbackMatch?.image ||
           "https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=600";
 
         return {
@@ -119,17 +120,12 @@ const MosaicGallery: React.FC<MosaicGalleryProps> = ({ subcategories = [] }) => 
         <div className="flex flex-col items-center gap-12 sm:gap-16 xl:flex-row xl:gap-24">
           {/* Header Area */}
           <div className="flex w-full flex-col items-center text-center space-y-6 xl:w-2/5 xl:items-start xl:text-left xl:pr-20">
-            <span className="inline-block text-[10px] font-bold uppercase tracking-[0.4em] text-primary lg:text-xs">
-              Nuestra Promesa
-            </span>
             <h2 className="font-display text-4xl font-bold leading-tight text-primary md:text-5xl lg:text-[56px]">
-              Momentos <br className="hidden lg:block" />{" "}
-              <span className="text-accent-gold">Inolvidables</span>
+              ¿Qué quieres <br className="hidden lg:block" />{" "}
+              <span className="text-accent-gold">decir?</span>
             </h2>
             <p className="w-full text-base leading-relaxed text-charcoal/70 lg:text-lg">
-              Cada arreglo es una pieza única de artesanía floral. Seleccionamos las
-              especies más vibrantes y frescas para asegurar que su mensaje perdure
-              en el tiempo y el corazón.
+              Encuentra las flores perfectas para cada ocasión.
             </p>
             <div className="pt-2 lg:pt-4">
               <Link
