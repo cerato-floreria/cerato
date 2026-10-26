@@ -30,6 +30,16 @@ interface CartContextType {
   setDeliveryTimeSlot: (slot: string) => void;
   deliveryNotes: string;
   setDeliveryNotes: (notes: string) => void;
+  shippingAddress: string;
+  setShippingAddress: (addr: string) => void;
+  neighborhood: string;
+  setNeighborhood: (n: string) => void;
+  postalCode: string;
+  setPostalCode: (cp: string) => void;
+  senderPhone: string;
+  setSenderPhone: (phone: string) => void;
+  recipientPhone: string;
+  setRecipientPhone: (phone: string) => void;
   cardFrom: string;
   setCardFrom: (from: string) => void;
   cardTo: string;
@@ -56,6 +66,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [deliveryDate, setDeliveryDateState] = useState<string>("");
   const [deliveryTimeSlot, setDeliveryTimeSlotState] = useState<string>("");
   const [deliveryNotes, setDeliveryNotesState] = useState<string>("");
+  const [shippingAddress, setShippingAddressState] = useState<string>("");
+  const [neighborhood, setNeighborhoodState] = useState<string>("");
+  const [postalCode, setPostalCodeState] = useState<string>("");
+  const [senderPhone, setSenderPhoneState] = useState<string>("");
+  const [recipientPhone, setRecipientPhoneState] = useState<string>("");
   const [cardFrom, setCardFromState] = useState<string>("");
   const [cardTo, setCardToState] = useState<string>("");
   const [cardMessage, setCardMessageState] = useState<string>("");
@@ -76,6 +91,46 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setDeliveryNotesState(value);
     try {
       localStorage.setItem("cerato_delivery_notes", value);
+    } catch {}
+  }, []);
+
+  const setShippingAddress = useCallback((addr: string) => {
+    const value = typeof addr === "string" ? addr.slice(0, 300) : "";
+    setShippingAddressState(value);
+    try {
+      localStorage.setItem("cerato_shipping_address", value);
+    } catch {}
+  }, []);
+
+  const setNeighborhood = useCallback((n: string) => {
+    const value = typeof n === "string" ? n.slice(0, 150) : "";
+    setNeighborhoodState(value);
+    try {
+      localStorage.setItem("cerato_neighborhood", value);
+    } catch {}
+  }, []);
+
+  const setPostalCode = useCallback((cp: string) => {
+    const value = typeof cp === "string" ? cp.slice(0, 20) : "";
+    setPostalCodeState(value);
+    try {
+      localStorage.setItem("cerato_postal_code", value);
+    } catch {}
+  }, []);
+
+  const setSenderPhone = useCallback((phone: string) => {
+    const value = typeof phone === "string" ? phone.slice(0, 30) : "";
+    setSenderPhoneState(value);
+    try {
+      localStorage.setItem("cerato_sender_phone", value);
+    } catch {}
+  }, []);
+
+  const setRecipientPhone = useCallback((phone: string) => {
+    const value = typeof phone === "string" ? phone.slice(0, 30) : "";
+    setRecipientPhoneState(value);
+    try {
+      localStorage.setItem("cerato_recipient_phone", value);
     } catch {}
   }, []);
 
@@ -126,6 +181,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (savedCard) setCardMessageState(savedCard);
       const savedCardSig = localStorage.getItem("cerato_card_signature");
       if (savedCardSig) setCardSignatureState(savedCardSig);
+      const savedShip = localStorage.getItem("cerato_shipping_address");
+      if (savedShip) setShippingAddressState(savedShip);
+      const savedNeigh = localStorage.getItem("cerato_neighborhood");
+      if (savedNeigh) setNeighborhoodState(savedNeigh);
+      const savedCp = localStorage.getItem("cerato_postal_code");
+      if (savedCp) setPostalCodeState(savedCp);
+      const savedSendPhone = localStorage.getItem("cerato_sender_phone");
+      if (savedSendPhone) setSenderPhoneState(savedSendPhone);
+      const savedRecPhone = localStorage.getItem("cerato_recipient_phone");
+      if (savedRecPhone) setRecipientPhoneState(savedRecPhone);
     } catch {}
 
     const cartId = localStorage.getItem("shopify_cart_id");
@@ -175,6 +240,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           );
           if (sigAttr?.value) {
             setCardSignatureState(sigAttr.value);
+          }
+          const shipAttr = existingCart.attributes?.find(
+            (a) => a.key === "Dirección de entrega"
+          );
+          if (shipAttr?.value) {
+            setShippingAddressState(shipAttr.value);
+          }
+          const neighAttr = existingCart.attributes?.find(
+            (a) => a.key === "Colonia / Barrio"
+          );
+          if (neighAttr?.value) {
+            setNeighborhoodState(neighAttr.value);
+          }
+          const cpAttr = existingCart.attributes?.find(
+            (a) => a.key === "Código Postal"
+          );
+          if (cpAttr?.value) {
+            setPostalCodeState(cpAttr.value);
+          }
+          const sendPhoneAttr = existingCart.attributes?.find(
+            (a) => a.key === "Teléfono quien manda"
+          );
+          if (sendPhoneAttr?.value) {
+            setSenderPhoneState(sendPhoneAttr.value);
+          }
+          const recPhoneAttr = existingCart.attributes?.find(
+            (a) => a.key === "Teléfono quien recibe"
+          );
+          if (recPhoneAttr?.value) {
+            setRecipientPhoneState(recPhoneAttr.value);
           }
         } else {
           localStorage.removeItem("shopify_cart_id");
@@ -287,6 +382,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deliveryDate,
         deliveryTimeSlot,
         deliveryNotes: deliveryNotes.trim(),
+        shippingAddress: shippingAddress.trim(),
+        neighborhood: neighborhood.trim(),
+        postalCode: postalCode.trim(),
+        senderPhone: senderPhone.trim(),
+        recipientPhone: recipientPhone.trim(),
         cardFrom: cardFrom.trim(),
         cardTo: cardTo.trim(),
         cardMessage: cardMessage.trim(),
@@ -340,6 +440,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setDeliveryTimeSlot,
         deliveryNotes,
         setDeliveryNotes,
+        shippingAddress,
+        setShippingAddress,
+        neighborhood,
+        setNeighborhood,
+        postalCode,
+        setPostalCode,
+        senderPhone,
+        setSenderPhone,
+        recipientPhone,
+        setRecipientPhone,
         cardFrom,
         setCardFrom,
         cardTo,

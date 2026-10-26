@@ -194,3 +194,80 @@ export function isDeliverySlotAvailable(
   const matched = slots.find((s) => s.slot.label === slotLabel);
   return matched ? matched.isAvailable : false;
 }
+
+export interface CalendarCell {
+  dateStr: string;
+  dayNumber: number;
+  isCurrentMonth: boolean;
+  isSunday: boolean;
+  isAvailable: boolean;
+  isPastOrLeadTime: boolean;
+}
+
+/**
+ * Generates calendar grid cells (42 or 35 cells) for month-view display
+ * with Sunday disabled and 24-hour lead time checks.
+ */
+export function getMonthCalendarGrid(
+  year: number,
+  month: number, // 0-indexed (0 = Jan, 11 = Dec)
+  now: Date = new Date()
+): CalendarCell[] {
+  const firstDayOfMonth = new Date(year, month, 1);
+  const startDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+  const daysInMonth = lastDayOfMonth.getDate();
+
+  const cells: CalendarCell[] = [];
+
+  // Previous month trailing days
+  const prevMonthLastDay = new Date(year, month, 0).getDate();
+  for (let i = startDayOfWeek - 1; i >= 0; i--) {
+    const dayNumber = prevMonthLastDay - i;
+    const date = new Date(year, month - 1, dayNumber);
+    const dateStr = toISODateString(date);
+    cells.push({
+      dateStr,
+      dayNumber,
+      isCurrentMonth: false,
+      isSunday: date.getDay() === 0,
+      isAvailable: false,
+      isPastOrLeadTime: true,
+    });
+  }
+
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const dateStr = toISODateString(date);
+    const isSunday = date.getDay() === 0;
+    const slots = getAvailableSlotsForDate(dateStr, now);
+    const hasAvailableSlots = slots.some((s) => s.isAvailable);
+
+    cells.push({
+      dateStr,
+      dayNumber: d,
+      isCurrentMonth: true,
+      isSunday,
+      isAvailable: !isSunday && hasAvailableSlots,
+      isPastOrLeadTime: isSunday || !hasAvailableSlots,
+    });
+  }
+
+  // Next month leading days to complete full 7-day rows
+  const remaining = (7 - (cells.length % 7)) % 7;
+  for (let nextD = 1; nextD <= remaining; nextD++) {
+    const date = new Date(year, month + 1, nextD);
+    const dateStr = toISODateString(date);
+    cells.push({
+      dateStr,
+      dayNumber: nextD,
+      isCurrentMonth: false,
+      isSunday: date.getDay() === 0,
+      isAvailable: false,
+      isPastOrLeadTime: true,
+    });
+  }
+
+  return cells;
+}

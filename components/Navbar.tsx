@@ -1,17 +1,18 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
-import CartDrawer from "./CartDrawer";
-import { useCart } from "@/context/CartContext";
-import { getProductsAction } from "@/app/actions/shopify";
-import { buildTaxonomy, slugifyCategory, toPascalCase } from "@/lib/shopify";
-import { NavigationCategory } from "@/lib/shopify/types";
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname } from 'next/navigation';
+import CartDrawer from './CartDrawer';
+import { useCart } from '@/context/CartContext';
+import { getProductsAction } from '@/app/actions/shopify';
+import { buildTaxonomy, slugifyCategory, toPascalCase } from '@/lib/shopify';
+import { NavigationCategory } from '@/lib/shopify/types';
 
 const SHOPIFY_DOMAIN =
-  process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'cerato-arte-floral.myshopify.com';
+  process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN ||
+  'cerato-arte-floral.myshopify.com';
 const ACCOUNT_LOGIN_URL = `https://${SHOPIFY_DOMAIN}/account/login`;
 
 const Navbar = () => {
@@ -20,7 +21,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [categories, setCategories] = useState<NavigationCategory[]>([]);
   const pathname = usePathname();
-  const isHomePage = pathname === "/";
+  const isHomePage = pathname === '/';
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -53,9 +54,9 @@ const Navbar = () => {
 
   useEffect(() => {
     if (isMobileMenuOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = 'auto';
     }
   }, [isMobileMenuOpen]);
 
@@ -63,8 +64,8 @@ const Navbar = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -83,8 +84,8 @@ const Navbar = () => {
   const isDarkNavbar = isScrolled || !isHomePage || activeMenu !== null;
 
   const headerStyle = isDarkNavbar
-    ? "bg-primary py-3 shadow-2xl shadow-primary/40 border-b border-white/10"
-    : "bg-transparent py-4 lg:py-5 hover:bg-primary/40 hover:backdrop-blur-md";
+    ? 'bg-primary py-3 shadow-2xl shadow-primary/40 border-b border-white/10'
+    : 'bg-transparent py-4 lg:py-5 hover:bg-primary/40 hover:backdrop-blur-md';
 
   return (
     <>
@@ -92,15 +93,17 @@ const Navbar = () => {
       <div
         className={`fixed inset-0 z-[90] bg-black/45 backdrop-blur-md transition-all duration-300 hidden lg:block ${
           activeMenu !== null
-            ? "opacity-100 visible pointer-events-auto"
-            : "opacity-0 invisible pointer-events-none"
+            ? 'opacity-100 visible pointer-events-auto'
+            : 'opacity-0 invisible pointer-events-none'
         }`}
         onClick={() => setActiveMenu(null)}
         onMouseEnter={handleMouseLeave}
         aria-hidden="true"
       />
 
-      <header className={`fixed top-0 left-0 right-0 z-[100] w-full px-6 transition-all duration-500 ${headerStyle}`}>
+      <header
+        className={`fixed top-0 left-0 right-0 z-[100] w-full px-6 transition-all duration-500 ${headerStyle}`}
+      >
         <div className="mx-auto flex max-w-[1440px] items-center justify-between lg:px-14">
           {/* Logo */}
           <Link
@@ -147,7 +150,7 @@ const Navbar = () => {
                     {cat.name}
                     <span
                       className={`absolute bottom-0 left-0 h-[2px] bg-accent-gold transition-all duration-300 ${
-                        isHovered ? "w-full" : "w-0 group-hover:w-full"
+                        isHovered ? 'w-full' : 'w-0 group-hover:w-full'
                       }`}
                     ></span>
                   </Link>
@@ -157,8 +160,8 @@ const Navbar = () => {
                     <div
                       className={`fixed left-[3%] right-[3%] top-[54px] lg:top-[58px] w-[94%] pt-4 z-[150] transition-all duration-300 ease-out ${
                         isHovered
-                          ? "opacity-100 visible translate-y-0 pointer-events-auto"
-                          : "opacity-0 invisible translate-y-2 pointer-events-none"
+                          ? 'opacity-100 visible translate-y-0 pointer-events-auto'
+                          : 'opacity-0 invisible translate-y-2 pointer-events-none'
                       }`}
                       onMouseEnter={() => handleMouseEnter(cat.name)}
                       onMouseLeave={handleMouseLeave}
@@ -221,6 +224,8 @@ const Navbar = () => {
               className="relative flex items-center justify-center h-10 w-10 text-white hover:text-accent-gold transition-colors"
               aria-label="Iniciar sesión en tu cuenta de Cerato Floral"
               title="Iniciar sesión / Mi cuenta"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               <span className="material-symbols-outlined text-2xl">person</span>
             </a>
@@ -231,7 +236,9 @@ const Navbar = () => {
               className="relative flex items-center justify-center h-10 w-10 text-white hover:text-accent-gold transition-colors cursor-pointer"
               aria-label={`Abrir carrito de compras${totalCartCount > 0 ? `, ${totalCartCount} productos` : ''}`}
             >
-              <span className="material-symbols-outlined text-2xl">shopping_bag</span>
+              <span className="material-symbols-outlined text-2xl">
+                shopping_bag
+              </span>
               {totalCartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-accent-gold text-primary font-bold text-[10px] h-5 w-5 rounded-full flex items-center justify-center shadow-md">
                   {totalCartCount}
@@ -241,11 +248,13 @@ const Navbar = () => {
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="flex items-center justify-center h-10 w-10 text-white hover:text-accent-gold transition-colors lg:hidden z-[110]"
-              aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú de navegación"}
+              aria-label={
+                isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú de navegación'
+              }
               aria-expanded={isMobileMenuOpen}
             >
               <span className="material-symbols-outlined text-3xl">
-                {isMobileMenuOpen ? "close" : "menu"}
+                {isMobileMenuOpen ? 'close' : 'menu'}
               </span>
             </button>
           </div>
@@ -255,7 +264,9 @@ const Navbar = () => {
       {/* Mobile Backdrop */}
       <div
         className={`fixed inset-0 z-[105] bg-black/40 backdrop-blur-sm transition-opacity duration-500 lg:hidden ${
-          isMobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+          isMobileMenuOpen
+            ? 'opacity-100 visible'
+            : 'opacity-0 invisible pointer-events-none'
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
         aria-hidden="true"
@@ -267,12 +278,16 @@ const Navbar = () => {
         aria-modal="true"
         aria-label="Menú de navegación móvil"
         className={`fixed right-0 top-0 bottom-0 z-[110] w-[85%] max-w-sm bg-primary border-l border-white/5 shadow-[-20px_0_40px_rgba(0,0,0,0.3)] transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) lg:hidden ${
-          isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full overflow-y-auto">
           <div className="flex items-center justify-between p-6 border-b border-white/5 bg-primary/80 backdrop-blur-md sticky top-0 z-10">
-            <Link href="/" className="flex items-center" onClick={() => setIsMobileMenuOpen(false)}>
+            <Link
+              href="/"
+              className="flex items-center"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
               <Image
                 src="/Logo-Color-1.png"
                 alt="Cerato Arte Floral"
@@ -321,7 +336,9 @@ const Navbar = () => {
                 className="flex items-center gap-3 text-sm font-bold uppercase tracking-wider text-white/90 hover:text-accent-gold transition-colors py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <span className="material-symbols-outlined text-2xl text-accent-gold">person</span>
+                <span className="material-symbols-outlined text-2xl text-accent-gold">
+                  person
+                </span>
                 <span>Mi Cuenta / Iniciar Sesión</span>
               </a>
             </div>

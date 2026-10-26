@@ -18,6 +18,11 @@ export interface SaveCartNotesParams {
   deliveryDate?: string;
   deliveryTimeSlot?: string;
   deliveryNotes?: string;
+  shippingAddress?: string;
+  neighborhood?: string;
+  postalCode?: string;
+  senderPhone?: string;
+  recipientPhone?: string;
   cardFrom?: string;
   cardTo?: string;
   cardMessage?: string;
@@ -119,6 +124,11 @@ export async function saveCartNotesAction(
       deliveryDate = "",
       deliveryTimeSlot = "",
       deliveryNotes = "",
+      shippingAddress = "",
+      neighborhood = "",
+      postalCode = "",
+      senderPhone = "",
+      recipientPhone = "",
       cardFrom = "",
       cardTo = "",
       cardMessage = "",
@@ -136,6 +146,11 @@ export async function saveCartNotesAction(
     const cleanDate = sanitizeOrderText(deliveryDate, 30);
     const cleanSlot = sanitizeOrderText(deliveryTimeSlot, 100);
     const cleanDeliveryNotes = sanitizeOrderText(deliveryNotes, 500);
+    const cleanShippingAddress = sanitizeOrderText(shippingAddress, 300);
+    const cleanNeighborhood = sanitizeOrderText(neighborhood, 150);
+    const cleanPostalCode = sanitizeOrderText(postalCode, 20);
+    const cleanSenderPhone = sanitizeOrderText(senderPhone, 30);
+    const cleanRecipientPhone = sanitizeOrderText(recipientPhone, 30);
     const cleanCardFrom = sanitizeOrderText(cardFrom, 100);
     const cleanCardTo = sanitizeOrderText(cardTo, 100);
     const cleanCardMessage = sanitizeOrderText(cardMessage, 500);
@@ -192,6 +207,21 @@ export async function saveCartNotesAction(
     attributes.push({ key: "Horario de entrega", value: cleanSlot });
     attributes.push({ key: "De (Remitente)", value: cleanCardFrom });
     attributes.push({ key: "Para (Destinatario)", value: cleanCardTo });
+    if (cleanSenderPhone) {
+      attributes.push({ key: "Teléfono quien manda", value: cleanSenderPhone });
+    }
+    if (cleanRecipientPhone) {
+      attributes.push({ key: "Teléfono quien recibe", value: cleanRecipientPhone });
+    }
+    if (cleanShippingAddress) {
+      attributes.push({ key: "Dirección de entrega", value: cleanShippingAddress });
+    }
+    if (cleanNeighborhood) {
+      attributes.push({ key: "Colonia / Barrio", value: cleanNeighborhood });
+    }
+    if (cleanPostalCode) {
+      attributes.push({ key: "Código Postal", value: cleanPostalCode });
+    }
     if (cleanCardSignature) {
       attributes.push({ key: "Firma de la tarjeta", value: cleanCardSignature });
     }
@@ -216,6 +246,12 @@ export async function saveCartNotesAction(
     }
     noteParts.push(`De: ${cleanCardFrom}`);
     noteParts.push(`Para: ${cleanCardTo}`);
+    if (cleanSenderPhone || cleanRecipientPhone) {
+      noteParts.push(`Tel. Envía: ${cleanSenderPhone || 'N/A'} | Tel. Recibe: ${cleanRecipientPhone || 'N/A'}`);
+    }
+    if (cleanShippingAddress) {
+      noteParts.push(`Dirección: ${cleanShippingAddress}${cleanNeighborhood ? `, Col. ${cleanNeighborhood}` : ''}${cleanPostalCode ? `, CP ${cleanPostalCode}` : ''}`);
+    }
     if (cleanCardMessage) {
       noteParts.push(`Dedicatoria: ${cleanCardMessage}`);
     }
