@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import React from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { CategorySubItem } from "@/lib/shopify/types";
-import { toPascalCase } from "@/lib/shopify";
+import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { CategorySubItem } from '@/lib/shopify/types';
+import { toPascalCase } from '@/lib/shopify';
 
 interface MosaicGalleryProps {
   subcategories?: CategorySubItem[];
@@ -14,49 +14,49 @@ interface MosaicGalleryProps {
 // 9 mosaic items matching the exact 9-slot asymmetric grid layout
 const DEFAULT_ITEMS = [
   {
-    name: "Felicidades",
-    image: "/Felicidades.jpg",
-    link: "/categoria/que-quieres-decir?subtipo=Felicidades",
+    name: 'Felicidades',
+    image: '/Felicidades.jpg',
+    link: '/categoria/que-quieres-decir?subtipo=Felicidades',
   },
   {
-    name: "Porque Sí",
-    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_192af2bf-ff48-4259-8477-128af3d4a128.png?v=1789105801",
-    link: "/categoria/que-quieres-decir?subtipo=Porque+S%C3%AD",
+    name: 'Porque Sí',
+    image: '/Porque_si.png',
+    link: '/categoria/que-quieres-decir?subtipo=Porque+S%C3%AD',
   },
   {
-    name: "Te Amo",
-    image: "/Te_amo.png",
-    link: "/categoria/que-quieres-decir?subtipo=Te+Amo",
+    name: 'Te Amo',
+    image: '/Te_amo.png',
+    link: '/categoria/que-quieres-decir?subtipo=Te+Amo',
   },
   {
-    name: "Feliz Aniversario",
-    image: "/Feliz_aniversario.jpg",
-    link: "/categoria/que-quieres-decir?subtipo=Feliz+Aniversario",
+    name: 'Feliz Aniversario',
+    image: '/Feliz_aniversario.jpg',
+    link: '/categoria/que-quieres-decir?subtipo=Feliz+Aniversario',
   },
   {
-    name: "Mejórate Pronto",
-    image: "https://cdn.shopify.com/s/files/1/0773/1154/1413/files/image_2f56f0ed-83b5-4a3b-9bcf-0fce6eba1c78.png?v=1789106747",
-    link: "/categoria/que-quieres-decir?subtipo=Mej%C3%B3rate+Pronto",
+    name: 'Mejórate Pronto',
+    image: '/Mejorate.png',
+    link: '/categoria/que-quieres-decir?subtipo=Mej%C3%B3rate+Pronto',
   },
   {
-    name: "Te Acompaño",
-    image: "/Te_acompano.png",
-    link: "/categoria/que-quieres-decir?subtipo=Te+Acompa%C3%B1o",
+    name: 'Te Acompaño',
+    image: '/Te_acompano.png',
+    link: '/categoria/que-quieres-decir?subtipo=Te+Acompa%C3%B1o',
   },
   {
-    name: "Gracias",
-    image: "/Gracias.png",
-    link: "/categoria/que-quieres-decir?subtipo=Gracias",
+    name: 'Gracias',
+    image: '/Gracias.png',
+    link: '/categoria/que-quieres-decir?subtipo=Gracias',
   },
   {
-    name: "Bienvenido Al Mundo",
-    image: "/Bienvenido_al_mundo.jpg",
-    link: "/categoria/que-quieres-decir?subtipo=Bienvenido+Al+Mundo",
+    name: 'Bienvenido Al Mundo',
+    image: '/Bienvenido_al_mundo.jpg',
+    link: '/categoria/que-quieres-decir?subtipo=Bienvenido+Al+Mundo',
   },
   {
-    name: "Ver Todo",
-    image: "/Ver_todo.jpg",
-    link: "/categoria/que-quieres-decir",
+    name: 'Ver Todo',
+    image: '/Ver_todo.jpg',
+    link: '/categoria/que-quieres-decir',
   },
 ];
 
@@ -65,33 +65,35 @@ const DEFAULT_ITEMS = [
 // - On tablet (md: 768px - 1279px): 3-column grid showing 3x3 squares
 // - On desktop (xl: >= 1280px): the exact asymmetric mosaic (3 columns with tall and wide cards)
 const MOSAIC_CLASSES = [
-  "col-span-1 aspect-square xl:row-span-1",
-  "col-span-1 aspect-square xl:row-span-1",
-  "col-span-1 aspect-square xl:row-span-1",
-  "col-span-1 aspect-square xl:col-span-2 xl:row-span-1 xl:aspect-[2/1]",
-  "col-span-1 aspect-square xl:col-span-1 xl:row-span-2 xl:aspect-[1/2]",
-  "col-span-1 aspect-square xl:row-span-1",
-  "col-span-1 aspect-square xl:row-span-1",
-  "col-span-1 aspect-square xl:row-span-1",
-  "col-span-2 aspect-[2/1] md:col-span-1 md:aspect-square xl:col-span-2 xl:row-span-1 xl:aspect-[2/1]",
+  'col-span-1 aspect-square xl:row-span-1',
+  'col-span-1 aspect-square xl:row-span-1',
+  'col-span-1 aspect-square xl:row-span-1',
+  'col-span-1 aspect-square xl:col-span-2 xl:row-span-1 xl:aspect-[2/1]',
+  'col-span-1 aspect-square xl:col-span-1 xl:row-span-2 xl:aspect-[1/2]',
+  'col-span-1 aspect-square xl:row-span-1',
+  'col-span-1 aspect-square xl:row-span-1',
+  'col-span-1 aspect-square xl:row-span-1',
+  'col-span-2 aspect-[2/1] md:col-span-1 md:aspect-square xl:col-span-2 xl:row-span-1 xl:aspect-[2/1]',
 ];
 
-const MosaicGallery: React.FC<MosaicGalleryProps> = ({ subcategories = [] }) => {
+const MosaicGallery: React.FC<MosaicGalleryProps> = ({
+  subcategories = [],
+}) => {
   // Build items from dynamic subcategories with curated fallback
   const items = React.useMemo(() => {
     if (subcategories && subcategories.length > 0) {
       const dynamicList = subcategories.map((sub) => {
         const productWithImage = sub.products.find(
-          (p) => p.featuredImage?.url || p.images?.edges?.[0]?.node?.url
+          (p) => p.featuredImage?.url || p.images?.edges?.[0]?.node?.url,
         );
         const fallbackMatch = DEFAULT_ITEMS.find(
-          (d) => d.name.toLowerCase() === sub.type.toLowerCase()
+          (d) => d.name.toLowerCase() === sub.type.toLowerCase(),
         );
         const img =
           fallbackMatch?.image ||
           productWithImage?.featuredImage?.url ||
           productWithImage?.images?.edges?.[0]?.node?.url ||
-          "https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=600";
+          'https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=600';
 
         return {
           name: sub.type,
@@ -121,7 +123,7 @@ const MosaicGallery: React.FC<MosaicGalleryProps> = ({ subcategories = [] }) => 
           {/* Header Area */}
           <div className="flex w-full flex-col items-center text-center space-y-6 xl:w-2/5 xl:items-start xl:text-left xl:pr-20">
             <h2 className="font-display text-4xl font-bold leading-tight text-primary md:text-5xl lg:text-[56px]">
-              ¿Qué quieres <br className="hidden lg:block" />{" "}
+              ¿Qué quieres <br className="hidden lg:block" />{' '}
               <span className="text-accent-gold">decir?</span>
             </h2>
             <p className="w-full text-base leading-relaxed text-charcoal/70 lg:text-lg">
@@ -145,7 +147,8 @@ const MosaicGallery: React.FC<MosaicGalleryProps> = ({ subcategories = [] }) => 
             <div className="asymmetric-mosaic">
               {items.map((sub, idx) => {
                 const displayName = toPascalCase(sub.name);
-                const spanClass = MOSAIC_CLASSES[idx] || "col-span-1 aspect-square";
+                const spanClass =
+                  MOSAIC_CLASSES[idx] || 'col-span-1 aspect-square';
 
                 return (
                   <Link
