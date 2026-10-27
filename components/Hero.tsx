@@ -42,9 +42,7 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
     return products
       .filter((product) => {
         const titleMatch = product.title?.toLowerCase().includes(q);
-        const tagMatch = product.tags?.some((t) =>
-          t.toLowerCase().includes(q),
-        );
+        const tagMatch = product.tags?.some((t) => t.toLowerCase().includes(q));
         const catMatch = product.categories?.some((c) =>
           c.toLowerCase().includes(q),
         );
@@ -106,11 +104,14 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
           </span>
           <h1 className="mb-6 font-display text-[32px] sm:text-[42px] font-light leading-[1.1] text-white md:text-6xl lg:mb-8 lg:text-[64px]">
             ¿A quién quieres <br />
-            <span className="italic font-normal text-cream">hacer sonreír?</span>
+            <span className="italic font-normal text-cream">
+              hacer sonreír?
+            </span>
           </h1>
-          <p className="mb-8 max-w-2xl text-base font-light leading-relaxed text-white/90 md:text-lg lg:mb-12 lg:text-xl">
-            Para celebrar, agradecer o sorprender. Todo es mejor con flores.
-          </p>
+          <div className="mb-8 max-w-2xl text-base font-light leading-relaxed text-white/90 md:text-lg lg:mb-12 lg:text-xl flex flex-col">
+            Para celebrar, agradecer o sorprender.
+            <span>Todo es mejor con flores.</span>
+          </div>
         </div>
 
         {/* Action Row - Centered */}

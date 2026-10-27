@@ -29,12 +29,14 @@ export async function shopifyFetch<T>({
   query,
   variables = {},
   tags = [],
-  cache = 'force-cache',
+  cache,
+  revalidate = 3600,
 }: {
   query: string;
   variables?: Record<string, unknown>;
   tags?: string[];
   cache?: RequestCache;
+  revalidate?: number;
 }): Promise<{ status: number; body: T } | never> {
   const domain =
     process.env.SHOPIFY_STORE_DOMAIN || 'cerato-arte-floral.myshopify.com';
@@ -49,6 +51,11 @@ export async function shopifyFetch<T>({
     return { status: 401, body: null as unknown as T };
   }
 
+  const isDev = process.env.NODE_ENV === 'development';
+  const effectiveCache: RequestCache =
+    cache ?? (isDev ? 'no-store' : 'force-cache');
+  const nextOptions = isDev ? { tags, revalidate: 0 } : { tags, revalidate };
+
   let attempt = 0;
   const maxAttempts = 3;
 
@@ -61,8 +68,8 @@ export async function shopifyFetch<T>({
           'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
         },
         body: JSON.stringify({ query, variables }),
-        cache,
-        next: { tags },
+        cache: effectiveCache,
+        next: nextOptions,
       });
 
       if (result.status === 429) {
@@ -180,17 +187,26 @@ export function buildTaxonomy(products: ShopifyProduct[]): TaxonomyData {
     string,
     {
       canonicalName: string;
-      typeMap: Map<string, { canonicalName: string; products: ShopifyProduct[] }>;
+      typeMap: Map<
+        string,
+        { canonicalName: string; products: ShopifyProduct[] }
+      >;
     }
   >();
 
   const temporadaMap = new Map<string, ShopifyProduct[]>();
   const featuredList: ShopifyProduct[] = [];
 
-  const getCanonicalName = (existing: string | undefined, incoming: string): string => {
+  const getCanonicalName = (
+    existing: string | undefined,
+    incoming: string,
+  ): string => {
     if (!existing) return incoming;
     // Prefer uppercase or title case formatting over all lowercase
-    if (incoming === incoming.toUpperCase() && existing !== existing.toUpperCase()) {
+    if (
+      incoming === incoming.toUpperCase() &&
+      existing !== existing.toUpperCase()
+    ) {
       return incoming;
     }
     return existing;
@@ -223,7 +239,10 @@ export function buildTaxonomy(products: ShopifyProduct[]): TaxonomyData {
       }
 
       const catEntry = categoryMap.get(catKey)!;
-      catEntry.canonicalName = getCanonicalName(catEntry.canonicalName, category.trim());
+      catEntry.canonicalName = getCanonicalName(
+        catEntry.canonicalName,
+        category.trim(),
+      );
 
       if (!catEntry.typeMap.has(typeKey)) {
         catEntry.typeMap.set(typeKey, {
@@ -233,7 +252,10 @@ export function buildTaxonomy(products: ShopifyProduct[]): TaxonomyData {
       }
 
       const typeEntry = catEntry.typeMap.get(typeKey)!;
-      typeEntry.canonicalName = getCanonicalName(typeEntry.canonicalName, type.trim());
+      typeEntry.canonicalName = getCanonicalName(
+        typeEntry.canonicalName,
+        type.trim(),
+      );
 
       if (!typeEntry.products.some((p) => p.id === product.id)) {
         typeEntry.products.push(product);
@@ -296,7 +318,10 @@ export function toPascalCase(str: string): string {
       if (clean === 'xl') return word.replace(/xl/i, 'XL');
       if (clean === 'xxl') return word.replace(/xxl/i, 'XXL');
       // Capitalize the first Unicode letter, preserving leading punctuation like ¿, ¡, (, ", etc.
-      return word.replace(/^(\P{L}*)(\p{L})/u, (_, p1, p2) => p1 + p2.toUpperCase());
+      return word.replace(
+        /^(\P{L}*)(\p{L})/u,
+        (_, p1, p2) => p1 + p2.toUpperCase(),
+      );
     })
     .join('');
 }
@@ -310,7 +335,6 @@ export async function getAllProducts(): Promise<ShopifyProduct[]> {
   }>({
     query: getProductsQuery,
     tags: ['products'],
-    cache: 'force-cache',
   });
 
   if (response?.body?.products?.edges) {
@@ -332,7 +356,6 @@ export async function getProductByHandle(
     query: getProductByHandleQuery,
     variables: { handle },
     tags: ['products'],
-    cache: 'force-cache',
   });
 
   if (response?.body?.product) {
@@ -366,11 +389,12 @@ export async function getSeasonalCollection(): Promise<SeasonalCollectionData | 
   }>({
     query: getCollectionsQuery,
     tags: ['collections'],
-    cache: 'force-cache',
   });
 
   if (response?.body?.collections?.edges) {
-    const collections = response.body.collections.edges.map((edge) => edge.node);
+    const collections = response.body.collections.edges.map(
+      (edge) => edge.node,
+    );
     const seasonal = collections.find((c) => /^temporada:\s*/i.test(c.title));
 
     if (seasonal) {
@@ -421,7 +445,10 @@ export async function createCart(
   lines: Array<{ merchandiseId: string; quantity: number }> = [],
 ): Promise<Cart | null> {
   const res = await shopifyFetch<{
-    cartCreate: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+    cartCreate: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
   }>({
     query: createCartMutation,
     variables: lines.length > 0 ? { lineItems: lines } : {},
@@ -429,7 +456,10 @@ export async function createCart(
   });
 
   if (res?.body?.cartCreate?.userErrors?.length) {
-    console.error('Shopify createCart userErrors:', res.body.cartCreate.userErrors);
+    console.error(
+      'Shopify createCart userErrors:',
+      res.body.cartCreate.userErrors,
+    );
   }
 
   return res?.body?.cartCreate?.cart || null;
@@ -441,7 +471,10 @@ export async function addToCart(
   quantity: number = 1,
 ): Promise<Cart | null> {
   const res = await shopifyFetch<{
-    cartLinesAdd: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+    cartLinesAdd: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
   }>({
     query: addToCartMutation,
     variables: {
@@ -452,7 +485,10 @@ export async function addToCart(
   });
 
   if (res?.body?.cartLinesAdd?.userErrors?.length) {
-    console.error('Shopify addToCart userErrors:', res.body.cartLinesAdd.userErrors);
+    console.error(
+      'Shopify addToCart userErrors:',
+      res.body.cartLinesAdd.userErrors,
+    );
     return null;
   }
 
@@ -465,7 +501,10 @@ export async function updateCartQuantity(
   quantity: number,
 ): Promise<Cart | null> {
   const res = await shopifyFetch<{
-    cartLinesUpdate: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+    cartLinesUpdate: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
   }>({
     query: updateCartItemMutation,
     variables: {
@@ -476,7 +515,10 @@ export async function updateCartQuantity(
   });
 
   if (res?.body?.cartLinesUpdate?.userErrors?.length) {
-    console.error('Shopify updateCartQuantity userErrors:', res.body.cartLinesUpdate.userErrors);
+    console.error(
+      'Shopify updateCartQuantity userErrors:',
+      res.body.cartLinesUpdate.userErrors,
+    );
     return null;
   }
 
@@ -488,7 +530,10 @@ export async function removeFromCart(
   lineIds: string[],
 ): Promise<Cart | null> {
   const res = await shopifyFetch<{
-    cartLinesRemove: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+    cartLinesRemove: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
   }>({
     query: removeFromCartMutation,
     variables: { cartId, lineIds },
@@ -496,7 +541,10 @@ export async function removeFromCart(
   });
 
   if (res?.body?.cartLinesRemove?.userErrors?.length) {
-    console.error('Shopify removeFromCart userErrors:', res.body.cartLinesRemove.userErrors);
+    console.error(
+      'Shopify removeFromCart userErrors:',
+      res.body.cartLinesRemove.userErrors,
+    );
     return null;
   }
 
@@ -516,7 +564,10 @@ export async function updateCartAttributes(
   cartId: string,
   attributes: Array<{ key: string; value: string }>,
   note?: string,
-): Promise<{ cart: Cart | null; userErrors?: Array<{ field: string[]; message: string }> }> {
+): Promise<{
+  cart: Cart | null;
+  userErrors?: Array<{ field: string[]; message: string }>;
+}> {
   let updatedCart: Cart | null = null;
   const allUserErrors: Array<{ field: string[]; message: string }> = [];
 
@@ -576,7 +627,10 @@ export async function updateCartLines(
     quantity?: number;
     attributes?: Array<{ key: string; value: string }>;
   }>,
-): Promise<{ cart: Cart | null; userErrors?: Array<{ field: string[]; message: string }> }> {
+): Promise<{
+  cart: Cart | null;
+  userErrors?: Array<{ field: string[]; message: string }>;
+}> {
   const res = await shopifyFetch<{
     cartLinesUpdate: {
       cart: Cart;
@@ -592,7 +646,10 @@ export async function updateCartLines(
   });
 
   if (res?.body?.cartLinesUpdate?.userErrors?.length) {
-    console.error('Shopify updateCartLines userErrors:', res.body.cartLinesUpdate.userErrors);
+    console.error(
+      'Shopify updateCartLines userErrors:',
+      res.body.cartLinesUpdate.userErrors,
+    );
     return { cart: null, userErrors: res.body.cartLinesUpdate.userErrors };
   }
 
@@ -751,10 +808,7 @@ export function getMockProducts(): ShopifyProduct[] {
       description:
         'Una orquídea Phalaenopsis de doble tallo en un tono púrpura profundo y real.',
       availableForSale: true,
-      tags: [
-        'cat:FLORES Y PLANTAS',
-        'type:Flores e Individuales',
-      ],
+      tags: ['cat:FLORES Y PLANTAS', 'type:Flores e Individuales'],
       priceRange: {
         minVariantPrice: { amount: '950.00', currencyCode: 'MXN' },
         maxVariantPrice: { amount: '950.00', currencyCode: 'MXN' },
