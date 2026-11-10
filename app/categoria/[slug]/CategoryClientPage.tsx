@@ -101,6 +101,7 @@ export default function CategoryClientPage({
           types: p.types || [],
           temporada: p.temporada || [],
           seasonName: p.temporada?.[0],
+          isFeatured: p.isFeatured ?? false,
           rawProduct: p,
         };
       });
@@ -121,26 +122,39 @@ export default function CategoryClientPage({
     return Array.from(seasonMap.values());
   }, [categoryProductsFormatted]);
 
-  // Apply search query, subtype/season, and price filters
+  // Check if any product in this category is marked as Featured (Destacado Cerato)
+  const hasFeaturedProducts = useMemo(() => {
+    return categoryProductsFormatted.some((p) => p.isFeatured);
+  }, [categoryProductsFormatted]);
+
+  // Apply search query, subtype/season/featured, and price filters
   const filteredProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     const isSeasonFilter = /^temporada:/i.test(selectedSubtype);
+    const isFeaturedFilter = /^destacado:/i.test(selectedSubtype);
     const targetSeason = isSeasonFilter
       ? selectedSubtype.replace(/^temporada:\s*/i, "").trim().toLowerCase()
       : "";
 
     return categoryProductsFormatted.filter((product) => {
+      const matchesFeaturedSearch =
+        Boolean(product.isFeatured) &&
+        ("destacado cerato".includes(q) || "productos destacados".includes(q));
+
       const matchesSearch =
         !q ||
         product.name.toLowerCase().includes(q) ||
         product.temporada.some((s) => s.toLowerCase().includes(q)) ||
-        product.types.some((t) => t.toLowerCase().includes(q));
+        product.types.some((t) => t.toLowerCase().includes(q)) ||
+        matchesFeaturedSearch;
 
       const matchesPrice = product.price <= maxPrice;
 
       let matchesSubtype = true;
       if (selectedSubtype !== "") {
-        if (isSeasonFilter) {
+        if (isFeaturedFilter) {
+          matchesSubtype = Boolean(product.isFeatured);
+        } else if (isSeasonFilter) {
           matchesSubtype = product.temporada.some(
             (s) =>
               s.replace(/^temporada:\s*/i, "").trim().toLowerCase() ===
@@ -168,9 +182,19 @@ export default function CategoryClientPage({
     });
   }, [categoryProductsFormatted, searchQuery, selectedSubtype, maxPrice, categoryName]);
 
-  // Group filtered products by sub-type or season sections
+  // Group filtered products by sub-type, featured, or season sections
   const sectionsToRender = useMemo(() => {
     if (selectedSubtype !== "") {
+      if (/^destacado:/i.test(selectedSubtype)) {
+        if (filteredProducts.length === 0) return [];
+        return [
+          {
+            title: "Destacado Cerato",
+            products: filteredProducts,
+          },
+        ];
+      }
+
       const isSeasonFilter = /^temporada:/i.test(selectedSubtype);
       if (isSeasonFilter) {
         const seasonLabel = selectedSubtype.replace(/^temporada:\s*/i, "").trim();
@@ -254,6 +278,7 @@ export default function CategoryClientPage({
         onClear={handleClearFilters}
         options={subtypeNames}
         seasonOptions={availableSeasons}
+        hasFeatured={hasFeaturedProducts}
         allLabel="Todos los Tipos"
         maxPriceLimit={10000}
       />
@@ -284,6 +309,7 @@ export default function CategoryClientPage({
             onClear={handleClearFilters}
             options={subtypeNames}
             seasonOptions={availableSeasons}
+            hasFeatured={hasFeaturedProducts}
             categoryLabel="Tipo / Subcategoría"
             allLabel="Todos los Tipos"
             maxPriceLimit={10000}

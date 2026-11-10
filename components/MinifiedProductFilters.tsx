@@ -15,6 +15,7 @@ interface MinifiedProductFiltersProps {
   onClear: () => void;
   options: string[];
   seasonOptions?: string[];
+  hasFeatured?: boolean;
   allLabel?: string;
   maxPriceLimit?: number;
 }
@@ -32,11 +33,13 @@ const MinifiedProductFilters: React.FC<MinifiedProductFiltersProps> = ({
   onClear,
   options,
   seasonOptions = [],
+  hasFeatured = false,
   allLabel = "Todos los Tipos",
   maxPriceLimit = 10000,
 }) => {
   const hasActiveFilters =
     Boolean(searchQuery) || Boolean(selectedCategory) || price < maxPriceLimit;
+  const hasSpecialOptions = hasFeatured || seasonOptions.length > 0;
 
   return (
     <div
@@ -79,11 +82,16 @@ const MinifiedProductFilters: React.FC<MinifiedProductFiltersProps> = ({
                 value={selectedCategory}
                 onChange={(e) => onCategory(e.target.value)}
                 aria-label="Filtrar por subcategoría"
-                className="w-full appearance-none bg-primary/[0.04] hover:bg-primary/[0.08] border border-primary/10 rounded-lg py-1.5 pl-3 pr-7 text-xs font-semibold text-primary transition-all cursor-pointer focus:ring-1 focus:ring-primary/20 truncate"
+                className="w-full appearance-none bg-primary/[0.04] hover:bg-primary/[0.08] border border-primary/10 rounded-lg py-1.5 pl-3 pr-7 text-base md:text-xs font-semibold text-primary transition-all cursor-pointer focus:ring-1 focus:ring-primary/20 truncate"
               >
                 <option value="">{allLabel}</option>
-                {seasonOptions.length > 0 && (
-                  <optgroup label="Especial de Temporada">
+                {hasSpecialOptions && (
+                  <optgroup label="Colecciones Especiales">
+                    {hasFeatured && (
+                      <option value="destacado:cerato">
+                        ✦ Destacado Cerato
+                      </option>
+                    )}
                     {seasonOptions.map((season) => (
                       <option key={`temporada:${season}`} value={`temporada:${season}`}>
                         ✨ Temporada: {season}
@@ -91,7 +99,7 @@ const MinifiedProductFilters: React.FC<MinifiedProductFiltersProps> = ({
                     ))}
                   </optgroup>
                 )}
-                {seasonOptions.length > 0 ? (
+                {hasSpecialOptions ? (
                   <optgroup label="Tipos / Subcategorías">
                     {options.map((opt) => (
                       <option key={opt} value={opt}>
@@ -123,7 +131,7 @@ const MinifiedProductFilters: React.FC<MinifiedProductFiltersProps> = ({
                 onChange={(e) => onSearch(e.target.value)}
                 placeholder="Buscar..."
                 aria-label="Buscar producto"
-                className="w-full bg-primary/[0.04] hover:bg-primary/[0.08] border border-primary/10 rounded-lg py-1.5 pl-8 pr-2 text-xs font-medium text-primary placeholder:text-primary/35 transition-all focus:ring-1 focus:ring-primary/20"
+                className="w-full bg-primary/[0.04] hover:bg-primary/[0.08] border border-primary/10 rounded-lg py-1.5 pl-8 pr-2 text-base md:text-xs font-medium text-primary placeholder:text-primary/35 transition-all focus:ring-1 focus:ring-primary/20"
               />
             </div>
 

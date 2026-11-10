@@ -12,6 +12,7 @@ interface FilterProps {
   onClear: () => void;
   options?: string[];
   seasonOptions?: string[];
+  hasFeatured?: boolean;
   categoryLabel?: string;
   allLabel?: string;
   maxPriceLimit?: number;
@@ -27,11 +28,13 @@ const ProductFilters: React.FC<FilterProps> = ({
   onClear,
   options,
   seasonOptions = [],
+  hasFeatured = false,
   categoryLabel = "Categoría / Tipo",
   allLabel = "Todas las Opciones",
   maxPriceLimit = 10000
 }) => {
   const [showFilters, setShowFilters] = React.useState(false);
+  const hasSpecialOptions = hasFeatured || seasonOptions.length > 0;
 
   return (
     <div className="mb-12 relative">
@@ -71,7 +74,7 @@ const ProductFilters: React.FC<FilterProps> = ({
                   onChange={(e) => onSearch(e.target.value)}
                   placeholder="Ej: Gerberas, Rosas o Temporada..." 
                   aria-label="Buscar flores o productos en el catálogo"
-                  className="w-full bg-primary/[0.03] border-none rounded-xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-primary/30 text-primary font-medium"
+                  className="w-full bg-primary/[0.03] border-none rounded-xl py-4 pl-12 pr-4 text-base md:text-sm focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-primary/30 text-primary font-medium"
                   type="text" 
                 />
               </div>
@@ -86,11 +89,16 @@ const ProductFilters: React.FC<FilterProps> = ({
                   value={selectedCategory}
                   onChange={(e) => onCategory(e.target.value)}
                   aria-label={categoryLabel}
-                  className="w-full appearance-none bg-primary/[0.03] border-none rounded-xl py-4 px-6 text-sm focus:ring-2 focus:ring-primary/10 transition-all text-primary/90 font-medium cursor-pointer"
+                  className="w-full appearance-none bg-primary/[0.03] border-none rounded-xl py-4 px-6 text-base md:text-sm focus:ring-2 focus:ring-primary/10 transition-all text-primary/90 font-medium cursor-pointer"
                 >
                   <option value="">{allLabel}</option>
-                  {seasonOptions.length > 0 && (
-                    <optgroup label="Especial de Temporada">
+                  {hasSpecialOptions && (
+                    <optgroup label="Colecciones Especiales">
+                      {hasFeatured && (
+                        <option value="destacado:cerato">
+                          ✦ Destacado Cerato
+                        </option>
+                      )}
                       {seasonOptions.map((season) => (
                         <option key={`temporada:${season}`} value={`temporada:${season}`}>
                           ✨ Temporada: {season}
@@ -99,7 +107,7 @@ const ProductFilters: React.FC<FilterProps> = ({
                     </optgroup>
                   )}
                   {options ? (
-                    seasonOptions.length > 0 ? (
+                    hasSpecialOptions ? (
                       <optgroup label="Tipos / Subcategorías">
                         {options.map((opt) => (
                           <option key={opt} value={opt}>

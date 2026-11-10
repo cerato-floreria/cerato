@@ -9,6 +9,7 @@ import { ShopifyProduct } from '@/lib/shopify/types';
 import { useCart } from '@/context/CartContext';
 import SoldOutBadge from './SoldOutBadge';
 import SeasonalBadge from './SeasonalBadge';
+import FeaturedBadge from './FeaturedBadge';
 
 const FeaturedProducts = () => {
   const [featured, setFeatured] = useState<ShopifyProduct[]>([]);
@@ -127,23 +128,14 @@ const FeaturedProducts = () => {
                         sizes="320px"
                       />
 
-                      <div className="absolute bottom-6 left-6">
-                        <span className="rounded-xl bg-primary/60 border border-white/10 px-4 py-2 text-[8px] font-bold uppercase tracking-widest text-white shadow-lg backdrop-blur-md md:px-5 md:py-2.5">
-                          DESTACADO CERATO
-                        </span>
+                      {/* Top Badges Container - Stacked vertically one below the previous */}
+                      <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-10 flex flex-col items-start gap-1.5">
+                        {seasonName && (
+                          <SeasonalBadge seasonName={seasonName} />
+                        )}
+                        <FeaturedBadge />
+                        {product.availableForSale === false && <SoldOutBadge />}
                       </div>
-
-                      {/* Top Badges Container */}
-                      {(seasonName || product.availableForSale === false) && (
-                        <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-10 flex flex-wrap items-start justify-between gap-1.5">
-                          {seasonName && (
-                            <SeasonalBadge seasonName={seasonName} />
-                          )}
-                          {product.availableForSale === false && (
-                            <SoldOutBadge className="ml-auto" />
-                          )}
-                        </div>
-                      )}
                     </Link>
                   ) : (
                     <button
@@ -160,17 +152,14 @@ const FeaturedProducts = () => {
                         sizes="320px"
                       />
 
-                      {/* Top Badges Container for inactive item */}
-                      {(seasonName || product.availableForSale === false) && (
-                        <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-10 flex flex-wrap items-start justify-between gap-1.5">
-                          {seasonName && (
-                            <SeasonalBadge seasonName={seasonName} />
-                          )}
-                          {product.availableForSale === false && (
-                            <SoldOutBadge className="ml-auto" />
-                          )}
-                        </div>
-                      )}
+                      {/* Top Badges Container for inactive item - Stacked vertically */}
+                      <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-10 flex flex-col items-start gap-1.5">
+                        {seasonName && (
+                          <SeasonalBadge seasonName={seasonName} />
+                        )}
+                        <FeaturedBadge />
+                        {product.availableForSale === false && <SoldOutBadge />}
+                      </div>
                     </button>
                   )}
 

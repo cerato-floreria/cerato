@@ -8,6 +8,7 @@ import { useCart } from '@/context/CartContext';
 import { toPascalCase, slugifyCategory } from '@/lib/shopify';
 import SoldOutBadge from './SoldOutBadge';
 import SeasonalBadge from './SeasonalBadge';
+import FeaturedBadge from './FeaturedBadge';
 
 export interface ProductVariantItem {
   id: string;
@@ -32,6 +33,7 @@ interface ProductDetailProps {
     tag?: string;
     temporada?: string[];
     seasonName?: string;
+    isFeatured?: boolean;
     description: string;
     longDescription?: string;
     availableForSale?: boolean;
@@ -280,12 +282,13 @@ const ProductDetailContent: React.FC<ProductDetailProps> = ({ product }) => {
                       fullscreen
                     </span>
                   </div>
-                  {(activeSeasonName || !isAvailable) && (
-                    <div className="pointer-events-none absolute inset-x-3.5 top-3.5 sm:inset-x-4 sm:top-4 z-10 flex flex-wrap items-start justify-between gap-1.5">
+                  {(activeSeasonName || product.isFeatured || !isAvailable) && (
+                    <div className="pointer-events-none absolute inset-x-3.5 top-3.5 sm:inset-x-4 sm:top-4 z-10 flex flex-col items-start gap-1.5">
                       {activeSeasonName && (
                         <SeasonalBadge seasonName={activeSeasonName} />
                       )}
-                      {!isAvailable && <SoldOutBadge className="ml-auto" />}
+                      {product.isFeatured && <FeaturedBadge />}
+                      {!isAvailable && <SoldOutBadge />}
                     </div>
                   )}
                 </div>
@@ -311,12 +314,13 @@ const ProductDetailContent: React.FC<ProductDetailProps> = ({ product }) => {
                         fullscreen
                       </span>
                     </div>
-                    {idx === 0 && (activeSeasonName || !isAvailable) && (
-                      <div className="pointer-events-none absolute inset-x-2.5 top-2.5 sm:inset-x-3.5 sm:top-3.5 z-10 flex flex-wrap items-start justify-between gap-1 sm:gap-1.5">
+                    {idx === 0 && (activeSeasonName || product.isFeatured || !isAvailable) && (
+                      <div className="pointer-events-none absolute inset-x-2.5 top-2.5 sm:inset-x-3.5 sm:top-3.5 z-10 flex flex-col items-start gap-1 sm:gap-1.5">
                         {activeSeasonName && (
                           <SeasonalBadge seasonName={activeSeasonName} />
                         )}
-                        {!isAvailable && <SoldOutBadge className="ml-auto" />}
+                        {product.isFeatured && <FeaturedBadge />}
+                        {!isAvailable && <SoldOutBadge />}
                       </div>
                     )}
                   </div>
@@ -328,14 +332,15 @@ const ProductDetailContent: React.FC<ProductDetailProps> = ({ product }) => {
           {/* Right Section: Product Info */}
           <div className="flex flex-col justify-center py-6 w-full lg:w-[45%]">
             <div className="max-w-md">
-              {/* Category & Seasonal Badge */}
-              <div className="mb-6 flex flex-wrap items-center gap-3">
+              {/* Category & Badges */}
+              <div className="mb-6 flex flex-wrap items-center gap-2.5">
                 <span className="block text-[10px] font-bold uppercase tracking-[0.4em] text-gray-500">
                   {categoryDisplay}
                 </span>
                 {activeSeasonName && (
                   <SeasonalBadge seasonName={activeSeasonName} size="lg" />
                 )}
+                {product.isFeatured && <FeaturedBadge size="lg" />}
               </div>
 
               {/* Title - PascalCase */}

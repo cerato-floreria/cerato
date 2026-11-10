@@ -8,6 +8,7 @@ import { toPascalCase } from '@/lib/shopify';
 import { useCart } from '@/context/CartContext';
 import SoldOutBadge from './SoldOutBadge';
 import SeasonalBadge from './SeasonalBadge';
+import FeaturedBadge from './FeaturedBadge';
 
 interface SeasonalSectionProps {
   collection: SeasonalCollectionData | null;
@@ -115,24 +116,27 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
                     sizes="(max-width: 1024px) 50vw, 25vw"
                   />
 
-                  {/* Top Badges Container - flex-wrap prevents overlap on mobile */}
-                  <div className="pointer-events-none absolute inset-x-2 top-2 sm:inset-x-3.5 sm:top-3.5 z-10 flex flex-wrap items-start justify-between gap-1 sm:gap-1.5">
+                  {/* Top Badges Container - Stacked vertically one below the previous */}
+                  <div className="pointer-events-none absolute inset-x-2 top-2 sm:inset-x-3.5 sm:top-3.5 z-10 flex flex-col items-start gap-1 sm:gap-1.5">
                     <SeasonalBadge seasonName={formattedSeason} />
-                    {!product.availableForSale && (
-                      <SoldOutBadge className="ml-auto" />
-                    )}
+                    {!product.availableForSale && <SoldOutBadge />}
                   </div>
                 </Link>
 
                 {/* Product Info */}
                 <div className="flex flex-1 flex-col p-3.5 sm:p-6 justify-between gap-3 sm:gap-4">
                   <div className="flex flex-col gap-1 sm:gap-1.5">
-                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-charcoal/50 truncate">
-                      {productSubtitle}
-                    </span>
+                    <div className="flex flex-wrap items-center justify-between gap-1 md:flex-row-reverse">
+                      {product.isFeatured && (
+                        <FeaturedBadge size="sm" className="md:ml-auto" />
+                      )}
+                      <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-charcoal/50 truncate">
+                        {productSubtitle}
+                      </span>
+                    </div>
                     <Link
                       href={`/producto/${product.handle}`}
-                      className="font-display text-sm sm:text-lg font-medium text-primary group-hover:text-accent transition-colors line-clamp-1"
+                      className="font-display text-sm sm:text-lg font-medium leading-snug text-primary group-hover:text-accent transition-colors break-words"
                       title={toPascalCase(product.title)}
                     >
                       {toPascalCase(product.title)}

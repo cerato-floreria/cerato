@@ -9,6 +9,7 @@ import { ShopifyProduct } from '@/lib/shopify/types';
 import { toPascalCase } from '@/lib/shopify';
 import SoldOutBadge from './SoldOutBadge';
 import SeasonalBadge from './SeasonalBadge';
+import FeaturedBadge from './FeaturedBadge';
 
 interface HeroProps {
   initialProducts?: ShopifyProduct[];
@@ -53,7 +54,17 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
         const seasonMatch = product.temporada?.some((s) =>
           s.toLowerCase().includes(q),
         );
-        return titleMatch || tagMatch || catMatch || typeMatch || seasonMatch;
+        const featuredMatch =
+          Boolean(product.isFeatured) &&
+          ('destacado cerato'.includes(q) || 'productos destacados'.includes(q));
+        return (
+          titleMatch ||
+          tagMatch ||
+          catMatch ||
+          typeMatch ||
+          seasonMatch ||
+          featuredMatch
+        );
       })
       .slice(0, 5); // Limit to top 5 suggestions
   }, [query, products]);
@@ -140,7 +151,7 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
                   search
                 </span>
                 <input
-                  className="w-full border-none bg-transparent py-2 text-xs font-medium text-charcoal placeholder:text-charcoal/30 focus:ring-0 lg:py-4 lg:text-sm"
+                  className="w-full border-none bg-transparent py-2 text-base md:text-xs font-medium text-charcoal placeholder:text-charcoal/30 focus:ring-0 lg:py-4 lg:text-sm"
                   placeholder='Busca: "Ramo rosas"'
                   type="text"
                   aria-label="Buscar productos florales"
@@ -229,6 +240,9 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
                                     seasonName={seasonName}
                                     size="sm"
                                   />
+                                )}
+                                {product.isFeatured && (
+                                  <FeaturedBadge size="sm" />
                                 )}
                                 {!product.availableForSale && (
                                   <SoldOutBadge size="sm" />

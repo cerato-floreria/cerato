@@ -6,6 +6,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { toPascalCase } from '@/lib/shopify';
 import SoldOutBadge from './SoldOutBadge';
 import SeasonalBadge from './SeasonalBadge';
+import FeaturedBadge from './FeaturedBadge';
 
 interface ProductCardProps {
   id: string;
@@ -17,6 +18,7 @@ interface ProductCardProps {
   availableForSale?: boolean;
   categorySlug?: string;
   seasonName?: string;
+  isFeatured?: boolean;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -28,6 +30,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   availableForSale = true,
   categorySlug,
   seasonName,
+  isFeatured = false,
 }) => {
   const targetSlug = handle || id;
   const displayName = useMemo(() => toPascalCase(name), [name]);
@@ -96,19 +99,24 @@ const ProductCard: React.FC<ProductCardProps> = ({
         sizes="(max-width: 1024px) 50vw, 25vw"
       />
 
-      {/* Top Badges Container - flex-wrap prevents overlap on mobile */}
+      {/* Top Badges Container - Stacked vertically one below the previous */}
       {(seasonName || !availableForSale) && (
-        <div className="pointer-events-none absolute inset-x-2 top-2 sm:inset-x-3.5 sm:top-3.5 z-10 flex flex-wrap items-start justify-between gap-1 sm:gap-1.5">
+        <div className="pointer-events-none absolute inset-x-2 top-2 sm:inset-x-3.5 sm:top-3.5 z-10 flex flex-col items-start gap-1 sm:gap-1.5">
           {seasonName && <SeasonalBadge seasonName={seasonName} />}
-          {!availableForSale && <SoldOutBadge className="ml-auto" />}
+          {!availableForSale && <SoldOutBadge />}
         </div>
       )}
 
       {/* Information Overlay */}
       <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-3 sm:p-5 pt-12 sm:pt-16 bg-gradient-to-t from-primary/95 via-primary/60 to-transparent transition-all duration-500">
+        {isFeatured && (
+          <div className="flex justify-end mb-1.5">
+            <FeaturedBadge size="sm" />
+          </div>
+        )}
         {/* Title and Price Row - Guaranteed No Overlap */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-3 w-full mb-2 sm:mb-3">
-          {/* Title Container with Ellipsis & Marquee Banner Effect */}
+          {/* Title Container with Full Text on Mobile & Marquee Banner Effect on Desktop */}
           <div
             ref={containerRef}
             className="flex-1 min-w-0 overflow-hidden relative"
@@ -123,10 +131,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     } as React.CSSProperties)
                   : undefined
               }
-              className={`font-display text-xs sm:text-[15px] font-semibold text-white tracking-wide drop-shadow-md transition-all ${
+              className={`font-display text-xs sm:text-[15px] font-semibold leading-snug text-white tracking-wide drop-shadow-md transition-all ${
                 isHovered && isOverflowing
-                  ? 'whitespace-nowrap inline-block animate-marquee-banner'
-                  : 'truncate block w-full'
+                  ? 'whitespace-normal break-words sm:whitespace-nowrap sm:inline-block sm:animate-marquee-banner'
+                  : 'whitespace-normal break-words sm:truncate block w-full'
               }`}
               title={displayName}
             >

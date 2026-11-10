@@ -14,6 +14,7 @@ interface Product {
   availableForSale?: boolean;
   seasonName?: string;
   temporada?: string[];
+  isFeatured?: boolean;
 }
 
 interface ProductSectionProps {
@@ -57,6 +58,7 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products, catego
             availableForSale={product.availableForSale}
             categorySlug={categorySlug}
             seasonName={product.seasonName || product.temporada?.[0]}
+            isFeatured={product.isFeatured}
           />
         ))}
       </div>

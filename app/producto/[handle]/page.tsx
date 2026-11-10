@@ -107,6 +107,7 @@ export default async function ProductHandlePage({ params, searchParams }: PagePr
     tag: matchedCategory,
     temporada: product.temporada || [],
     seasonName: product.temporada?.[0],
+    isFeatured: product.isFeatured ?? false,
     description: product.description,
     longDescription: product.description,
     availableForSale: product.availableForSale ?? true,

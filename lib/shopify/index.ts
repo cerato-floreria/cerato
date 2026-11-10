@@ -138,15 +138,12 @@ export function parseProductTags(product: ShopifyProduct): ShopifyProduct {
       if (val && !temporada.some((t) => t.toLowerCase() === val.toLowerCase())) {
         temporada.push(val);
       }
-    } else if (
-      trimmed.toLowerCase() === 'productos destacados' ||
-      trimmed.toLowerCase() === 'destacado'
-    ) {
+    } else if (/^(productos?\s+)?destacados?(\s+cerato)?$/i.test(trimmed)) {
       isFeatured = true;
     }
   });
 
-  // Also detect seasonal collections assigned in Shopify ("temporada: {nombre}")
+  // Also detect seasonal and featured collections assigned in Shopify
   (product.collections?.edges || []).forEach((edge) => {
     const colTitle = edge?.node?.title?.trim() || '';
     if (/^temporada:\s*/i.test(colTitle)) {
@@ -154,6 +151,8 @@ export function parseProductTags(product: ShopifyProduct): ShopifyProduct {
       if (val && !temporada.some((t) => t.toLowerCase() === val.toLowerCase())) {
         temporada.push(val);
       }
+    } else if (/^(productos?\s+)?destacados?(\s+cerato)?$/i.test(colTitle)) {
+      isFeatured = true;
     }
   });
 
