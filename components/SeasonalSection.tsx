@@ -7,6 +7,7 @@ import { SeasonalCollectionData, ShopifyProduct } from '@/lib/shopify/types';
 import { toPascalCase } from '@/lib/shopify';
 import { useCart } from '@/context/CartContext';
 import SoldOutBadge from './SoldOutBadge';
+import SeasonalBadge from './SeasonalBadge';
 
 interface SeasonalSectionProps {
   collection: SeasonalCollectionData | null;
@@ -46,7 +47,7 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-accent/5 rounded-full blur-[120px]" />
       <div className="pointer-events-none absolute -bottom-40 right-10 w-[500px] h-[300px] bg-accent-gold/5 rounded-full blur-[100px]" />
 
-      <div className="relative mx-auto max-w-[1440px] px-6 lg:px-20">
+      <div className="relative mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-20">
         {/* Header Section with Catchy Seasonal Title */}
         <div className="mb-14 lg:mb-16 flex flex-col items-center text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/5 border border-primary/10 px-5 py-2">
@@ -73,7 +74,7 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
         </div>
 
         {/* Seasonal Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-6 lg:gap-8">
           {collection.products.map((product) => {
             const imageUrl =
               product.featuredImage?.url ||
@@ -111,58 +112,48 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
                     alt={product.title}
                     fill
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    sizes="(max-width: 1024px) 50vw, 25vw"
                   />
 
-                  {/* Seasonal Badge with pulsing live dot */}
-                  <div className="absolute top-3.5 left-3.5 z-10">
-                    <span className="inline-flex items-center gap-2 rounded-full bg-primary/80 backdrop-blur-md border border-white/10 px-3 py-1 text-[9px] font-bold tracking-widest text-accent-gold uppercase shadow-sm">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-gold opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-gold" />
-                      </span>
-                      {formattedSeason}
-                    </span>
+                  {/* Top Badges Container - flex-wrap prevents overlap on mobile */}
+                  <div className="pointer-events-none absolute inset-x-2 top-2 sm:inset-x-3.5 sm:top-3.5 z-10 flex flex-wrap items-start justify-between gap-1 sm:gap-1.5">
+                    <SeasonalBadge seasonName={formattedSeason} />
+                    {!product.availableForSale && (
+                      <SoldOutBadge className="ml-auto" />
+                    )}
                   </div>
-
-                  {/* Out of stock badge if not available */}
-                  {!product.availableForSale && (
-                    <div className="absolute top-3.5 right-3.5 z-10">
-                      <SoldOutBadge />
-                    </div>
-                  )}
                 </Link>
 
                 {/* Product Info */}
-                <div className="flex flex-1 flex-col p-5 sm:p-6 justify-between gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-charcoal/50">
+                <div className="flex flex-1 flex-col p-3.5 sm:p-6 justify-between gap-3 sm:gap-4">
+                  <div className="flex flex-col gap-1 sm:gap-1.5">
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-charcoal/50 truncate">
                       {productSubtitle}
                     </span>
                     <Link
                       href={`/producto/${product.handle}`}
-                      className="font-display text-lg font-medium text-primary group-hover:text-accent transition-colors line-clamp-1"
+                      className="font-display text-sm sm:text-lg font-medium text-primary group-hover:text-accent transition-colors line-clamp-1"
                       title={toPascalCase(product.title)}
                     >
                       {toPascalCase(product.title)}
                     </Link>
-                    <p className="text-base font-bold text-accent-gold mt-1">
+                    <p className="text-xs sm:text-base font-bold text-accent-gold mt-0.5 sm:mt-1">
                       {price}
                     </p>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-primary/5">
+                  <div className="flex items-center gap-1.5 sm:gap-2 pt-2 border-t border-primary/5">
                     <Link
                       href={`/producto/${product.handle}`}
-                      className="flex-1 rounded-xl border border-primary/15 py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-primary transition-all hover:bg-primary hover:text-white"
+                      className="flex-1 rounded-lg sm:rounded-xl border border-primary/15 py-2 sm:py-2.5 text-center text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.12em] sm:tracking-[0.18em] text-primary transition-all hover:bg-primary hover:text-white"
                     >
                       Ver Detalle
                     </Link>
                     <button
                       onClick={(e) => handleQuickAdd(e, product)}
                       disabled={isItemAdding || !product.availableForSale}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white transition-all hover:bg-accent-gold hover:text-primary shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-primary text-white transition-all hover:bg-accent-gold hover:text-primary shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       aria-label={
                         product.availableForSale
                           ? `Agregar ${toPascalCase(product.title)} al carrito`
@@ -174,7 +165,7 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
                           : 'Producto agotado'
                       }
                     >
-                      <span className="material-symbols-outlined text-lg">
+                      <span className="material-symbols-outlined text-base sm:text-lg">
                         {isItemAdding ? 'sync' : 'shopping_bag'}
                       </span>
                     </button>

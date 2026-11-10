@@ -105,6 +105,8 @@ export default async function ProductHandlePage({ params, searchParams }: PagePr
     categories: product.categories || [],
     fromCategorySlug: fromParam,
     tag: matchedCategory,
+    temporada: product.temporada || [],
+    seasonName: product.temporada?.[0],
     description: product.description,
     longDescription: product.description,
     availableForSale: product.availableForSale ?? true,

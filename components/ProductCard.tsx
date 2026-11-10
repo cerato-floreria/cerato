@@ -5,6 +5,7 @@ import Link from 'next/link';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { toPascalCase } from '@/lib/shopify';
 import SoldOutBadge from './SoldOutBadge';
+import SeasonalBadge from './SeasonalBadge';
 
 interface ProductCardProps {
   id: string;
@@ -15,6 +16,7 @@ interface ProductCardProps {
   image: string;
   availableForSale?: boolean;
   categorySlug?: string;
+  seasonName?: string;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -25,6 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   image,
   availableForSale = true,
   categorySlug,
+  seasonName,
 }) => {
   const targetSlug = handle || id;
   const displayName = useMemo(() => toPascalCase(name), [name]);
@@ -90,20 +93,21 @@ const ProductCard: React.FC<ProductCardProps> = ({
         alt={displayName}
         fill
         className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        sizes="(max-width: 1024px) 50vw, 25vw"
       />
 
-      {/* Out of Stock Badge */}
-      {!availableForSale && (
-        <div className="absolute top-3.5 right-3.5 z-10">
-          <SoldOutBadge />
+      {/* Top Badges Container - flex-wrap prevents overlap on mobile */}
+      {(seasonName || !availableForSale) && (
+        <div className="pointer-events-none absolute inset-x-2 top-2 sm:inset-x-3.5 sm:top-3.5 z-10 flex flex-wrap items-start justify-between gap-1 sm:gap-1.5">
+          {seasonName && <SeasonalBadge seasonName={seasonName} />}
+          {!availableForSale && <SoldOutBadge className="ml-auto" />}
         </div>
       )}
 
       {/* Information Overlay */}
-      <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-5 pt-16 bg-gradient-to-t from-primary/95 via-primary/60 to-transparent transition-all duration-500">
+      <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-3 sm:p-5 pt-12 sm:pt-16 bg-gradient-to-t from-primary/95 via-primary/60 to-transparent transition-all duration-500">
         {/* Title and Price Row - Guaranteed No Overlap */}
-        <div className="flex items-center justify-between gap-3 w-full mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-3 w-full mb-2 sm:mb-3">
           {/* Title Container with Ellipsis & Marquee Banner Effect */}
           <div
             ref={containerRef}
@@ -119,7 +123,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     } as React.CSSProperties)
                   : undefined
               }
-              className={`font-display text-sm sm:text-[15px] font-semibold text-white tracking-wide drop-shadow-md transition-all ${
+              className={`font-display text-xs sm:text-[15px] font-semibold text-white tracking-wide drop-shadow-md transition-all ${
                 isHovered && isOverflowing
                   ? 'whitespace-nowrap inline-block animate-marquee-banner'
                   : 'truncate block w-full'
@@ -131,8 +135,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           {/* Price Component - Fixed & Never Crowded */}
-          <div className="shrink-0 text-right whitespace-nowrap pl-1">
-            <span className="text-sm sm:text-[15px] font-bold text-accent-gold drop-shadow-md">
+          <div className="shrink-0 sm:text-right whitespace-nowrap sm:pl-1">
+            <span className="text-xs sm:text-[15px] font-bold text-accent-gold drop-shadow-md">
               $
               {price.toLocaleString('es-MX', {
                 minimumFractionDigits: 2,
@@ -143,7 +147,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* View Product CTA Button */}
-        <span className="w-full block text-center rounded-lg bg-white/95 py-2.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary transition-all group-hover:bg-accent-gold group-hover:text-white shadow-md backdrop-blur-sm">
+        <span className="w-full block text-center rounded-lg bg-white/95 py-2 sm:py-2.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.18em] sm:tracking-[0.25em] text-primary transition-all group-hover:bg-accent-gold group-hover:text-white shadow-md backdrop-blur-sm">
           Ver Detalles
         </span>
       </div>

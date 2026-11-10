@@ -30,7 +30,7 @@ export async function shopifyFetch<T>({
   variables = {},
   tags = [],
   cache,
-  revalidate = 3600,
+  revalidate = 60,
 }: {
   query: string;
   variables?: Record<string, unknown>;
@@ -135,7 +135,9 @@ export function parseProductTags(product: ShopifyProduct): ShopifyProduct {
       type2 = trimmed.replace(/^type2:/i, '').trim();
     } else if (/^temporada:/i.test(trimmed)) {
       const val = trimmed.replace(/^temporada:/i, '').trim();
-      if (val && !temporada.includes(val)) temporada.push(val);
+      if (val && !temporada.some((t) => t.toLowerCase() === val.toLowerCase())) {
+        temporada.push(val);
+      }
     } else if (
       trimmed.toLowerCase() === 'productos destacados' ||
       trimmed.toLowerCase() === 'destacado'
@@ -144,9 +146,28 @@ export function parseProductTags(product: ShopifyProduct): ShopifyProduct {
     }
   });
 
+  // Also detect seasonal collections assigned in Shopify ("temporada: {nombre}")
+  (product.collections?.edges || []).forEach((edge) => {
+    const colTitle = edge?.node?.title?.trim() || '';
+    if (/^temporada:\s*/i.test(colTitle)) {
+      const val = colTitle.replace(/^temporada:\s*/i, '').trim();
+      if (val && !temporada.some((t) => t.toLowerCase() === val.toLowerCase())) {
+        temporada.push(val);
+      }
+    }
+  });
+
   const categoryPairs: CategoryTypePair[] = [];
   const categories: string[] = [];
   const types: string[] = [];
+
+  // Fallback: if a product belongs to a seasonal collection but has no cat: tag, include it under FLORES Y PLANTAS
+  if (!cat1 && !cat2 && temporada.length > 0) {
+    cat1 = 'FLORES Y PLANTAS';
+    if (!type1) {
+      type1 = `Temporada ${toPascalCase(temporada[0])}`;
+    }
+  }
 
   // Pair 1: cat: linked with type:
   if (cat1) {

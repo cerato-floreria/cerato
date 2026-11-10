@@ -12,6 +12,8 @@ interface Product {
   currency?: string;
   image: string;
   availableForSale?: boolean;
+  seasonName?: string;
+  temporada?: string[];
 }
 
 interface ProductSectionProps {
@@ -42,7 +44,7 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products, catego
       </div>
 
       {/* Product Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 relative z-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-8 lg:gap-12 relative z-10">
         {products.map((product, index) => (
           <ProductCard
             key={`${product.id}-${index}`}
@@ -54,6 +56,7 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products, catego
             currency={product.currency}
             availableForSale={product.availableForSale}
             categorySlug={categorySlug}
+            seasonName={product.seasonName || product.temporada?.[0]}
           />
         ))}
       </div>

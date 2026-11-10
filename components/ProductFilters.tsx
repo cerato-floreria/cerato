@@ -11,6 +11,7 @@ interface FilterProps {
   onPrice: (price: number) => void;
   onClear: () => void;
   options?: string[];
+  seasonOptions?: string[];
   categoryLabel?: string;
   allLabel?: string;
   maxPriceLimit?: number;
@@ -25,6 +26,7 @@ const ProductFilters: React.FC<FilterProps> = ({
   onPrice, 
   onClear,
   options,
+  seasonOptions = [],
   categoryLabel = "Categoría / Tipo",
   allLabel = "Todas las Opciones",
   maxPriceLimit = 10000
@@ -67,7 +69,7 @@ const ProductFilters: React.FC<FilterProps> = ({
                   id="catalog-search-input"
                   value={searchQuery}
                   onChange={(e) => onSearch(e.target.value)}
-                  placeholder="Ej: Gerberas, Rosas..." 
+                  placeholder="Ej: Gerberas, Rosas o Temporada..." 
                   aria-label="Buscar flores o productos en el catálogo"
                   className="w-full bg-primary/[0.03] border-none rounded-xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-primary/30 text-primary font-medium"
                   type="text" 
@@ -87,12 +89,31 @@ const ProductFilters: React.FC<FilterProps> = ({
                   className="w-full appearance-none bg-primary/[0.03] border-none rounded-xl py-4 px-6 text-sm focus:ring-2 focus:ring-primary/10 transition-all text-primary/90 font-medium cursor-pointer"
                 >
                   <option value="">{allLabel}</option>
+                  {seasonOptions.length > 0 && (
+                    <optgroup label="Especial de Temporada">
+                      {seasonOptions.map((season) => (
+                        <option key={`temporada:${season}`} value={`temporada:${season}`}>
+                          ✨ Temporada: {season}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                   {options ? (
-                    options.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))
+                    seasonOptions.length > 0 ? (
+                      <optgroup label="Tipos / Subcategorías">
+                        {options.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ) : (
+                      options.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))
+                    )
                   ) : (
                     <>
                       <option value="Ramos y Atados">Ramos y Atados</option>

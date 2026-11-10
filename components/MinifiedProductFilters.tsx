@@ -14,6 +14,7 @@ interface MinifiedProductFiltersProps {
   onPrice: (price: number) => void;
   onClear: () => void;
   options: string[];
+  seasonOptions?: string[];
   allLabel?: string;
   maxPriceLimit?: number;
 }
@@ -30,6 +31,7 @@ const MinifiedProductFilters: React.FC<MinifiedProductFiltersProps> = ({
   onPrice,
   onClear,
   options,
+  seasonOptions = [],
   allLabel = "Todos los Tipos",
   maxPriceLimit = 10000,
 }) => {
@@ -80,11 +82,30 @@ const MinifiedProductFilters: React.FC<MinifiedProductFiltersProps> = ({
                 className="w-full appearance-none bg-primary/[0.04] hover:bg-primary/[0.08] border border-primary/10 rounded-lg py-1.5 pl-3 pr-7 text-xs font-semibold text-primary transition-all cursor-pointer focus:ring-1 focus:ring-primary/20 truncate"
               >
                 <option value="">{allLabel}</option>
-                {options.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
+                {seasonOptions.length > 0 && (
+                  <optgroup label="Especial de Temporada">
+                    {seasonOptions.map((season) => (
+                      <option key={`temporada:${season}`} value={`temporada:${season}`}>
+                        ✨ Temporada: {season}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {seasonOptions.length > 0 ? (
+                  <optgroup label="Tipos / Subcategorías">
+                    {options.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : (
+                  options.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))
+                )}
               </select>
               <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-sm text-primary/40 pointer-events-none">
                 expand_more

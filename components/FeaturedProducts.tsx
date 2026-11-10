@@ -8,6 +8,7 @@ import { buildTaxonomy } from '@/lib/shopify';
 import { ShopifyProduct } from '@/lib/shopify/types';
 import { useCart } from '@/context/CartContext';
 import SoldOutBadge from './SoldOutBadge';
+import SeasonalBadge from './SeasonalBadge';
 
 const FeaturedProducts = () => {
   const [featured, setFeatured] = useState<ShopifyProduct[]>([]);
@@ -92,6 +93,7 @@ const FeaturedProducts = () => {
               const imageUrl =
                 product.featuredImage?.url ||
                 'https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=400';
+              const seasonName = product.temporada?.[0];
 
               return (
                 <div
@@ -131,10 +133,15 @@ const FeaturedProducts = () => {
                         </span>
                       </div>
 
-                      {/* Out of Stock Badge */}
-                      {product.availableForSale === false && (
-                        <div className="absolute top-4 right-4 z-10">
-                          <SoldOutBadge />
+                      {/* Top Badges Container */}
+                      {(seasonName || product.availableForSale === false) && (
+                        <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-10 flex flex-wrap items-start justify-between gap-1.5">
+                          {seasonName && (
+                            <SeasonalBadge seasonName={seasonName} />
+                          )}
+                          {product.availableForSale === false && (
+                            <SoldOutBadge className="ml-auto" />
+                          )}
                         </div>
                       )}
                     </Link>
@@ -153,10 +160,15 @@ const FeaturedProducts = () => {
                         sizes="320px"
                       />
 
-                      {/* Out of Stock Badge for inactive item */}
-                      {product.availableForSale === false && (
-                        <div className="absolute top-4 right-4 z-10">
-                          <SoldOutBadge />
+                      {/* Top Badges Container for inactive item */}
+                      {(seasonName || product.availableForSale === false) && (
+                        <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-10 flex flex-wrap items-start justify-between gap-1.5">
+                          {seasonName && (
+                            <SeasonalBadge seasonName={seasonName} />
+                          )}
+                          {product.availableForSale === false && (
+                            <SoldOutBadge className="ml-auto" />
+                          )}
                         </div>
                       )}
                     </button>

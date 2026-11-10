@@ -52,6 +52,13 @@ export const productFragment = `
         }
       }
     }
+    collections(first: 10) {
+      edges {
+        node {
+          title
+        }
+      }
+    }
   }
 `;
 

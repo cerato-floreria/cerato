@@ -44,6 +44,13 @@ export interface ShopifyProduct {
       };
     }>;
   };
+  collections?: {
+    edges: Array<{
+      node: {
+        title: string;
+      };
+    }>;
+  };
   // Parsed metadata fields from tags
   categories?: string[];
   types?: string[];

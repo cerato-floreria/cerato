@@ -8,6 +8,7 @@ import { getProductsAction } from '@/app/actions/shopify';
 import { ShopifyProduct } from '@/lib/shopify/types';
 import { toPascalCase } from '@/lib/shopify';
 import SoldOutBadge from './SoldOutBadge';
+import SeasonalBadge from './SeasonalBadge';
 
 interface HeroProps {
   initialProducts?: ShopifyProduct[];
@@ -49,7 +50,10 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
         const typeMatch = product.types?.some((t) =>
           t.toLowerCase().includes(q),
         );
-        return titleMatch || tagMatch || catMatch || typeMatch;
+        const seasonMatch = product.temporada?.some((s) =>
+          s.toLowerCase().includes(q),
+        );
+        return titleMatch || tagMatch || catMatch || typeMatch || seasonMatch;
       })
       .slice(0, 5); // Limit to top 5 suggestions
   }, [query, products]);
@@ -80,7 +84,7 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
   };
 
   return (
-    <section className="relative min-h-screen w-full pb-8">
+    <section className="relative z-30 min-h-screen w-full pb-8">
       {/* Background Image & Overlay optimized with next/image */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <Image
@@ -184,6 +188,7 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
                           : product.categories?.[0]
                             ? toPascalCase(product.categories[0])
                             : 'Arreglo Floral';
+                        const seasonName = product.temporada?.[0];
 
                         return (
                           <Link
@@ -201,11 +206,11 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
                                 sizes="48px"
                               />
                             </div>
-                            <div className="flex flex-col min-w-0 flex-1">
+                            <div className="flex flex-col min-w-0 flex-1 gap-0.5">
                               <span className="text-sm font-display font-medium text-primary group-hover:text-accent transition-colors truncate">
                                 {toPascalCase(product.title)}
                               </span>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                                 <span className="text-[10px] font-sans text-charcoal/50 uppercase tracking-wider">
                                   {subtitle}
                                 </span>
@@ -219,8 +224,14 @@ const Hero: React.FC<HeroProps> = ({ initialProducts = [] }) => {
                                     </span>
                                   </>
                                 )}
+                                {seasonName && (
+                                  <SeasonalBadge
+                                    seasonName={seasonName}
+                                    size="sm"
+                                  />
+                                )}
                                 {!product.availableForSale && (
-                                  <SoldOutBadge size="sm" className="ml-1" />
+                                  <SoldOutBadge size="sm" />
                                 )}
                               </div>
                             </div>

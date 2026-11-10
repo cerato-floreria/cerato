@@ -13,8 +13,8 @@ export const SoldOutBadge: React.FC<SoldOutBadgeProps> = ({
 }) => {
   const sizeClasses =
     size === 'sm'
-      ? 'px-2 py-0.5 text-[8px] gap-1'
-      : 'px-2.5 py-1 text-[9px] gap-1.5';
+      ? 'px-2 py-0.5 text-[7.5px] gap-1'
+      : 'px-2 py-0.5 text-[8px] gap-1 sm:px-2.5 sm:py-1 sm:text-[9px] sm:gap-1.5';
 
   return (
     <span

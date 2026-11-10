@@ -5,7 +5,7 @@ import ProductFilters from "@/components/ProductFilters";
 import MinifiedProductFilters from "@/components/MinifiedProductFilters";
 import ProductSection from "@/components/ProductSection";
 import { CategorySubItem, ShopifyProduct } from "@/lib/shopify/types";
-import { slugifyCategory } from "@/lib/shopify";
+import { slugifyCategory, toPascalCase } from "@/lib/shopify";
 
 interface CategoryClientPageProps {
   categoryName: string;
@@ -99,38 +99,90 @@ export default function CategoryClientPage({
           availableForSale: p.availableForSale !== false,
           categoryPairs: p.categoryPairs || [],
           types: p.types || [],
+          temporada: p.temporada || [],
+          seasonName: p.temporada?.[0],
           rawProduct: p,
         };
       });
   }, [allProducts, categoryName]);
 
-  // Apply search query, subtype, and price filters
+  // Available season names within this category for the filter dropdown
+  const availableSeasons = useMemo(() => {
+    const seasonMap = new Map<string, string>();
+    categoryProductsFormatted.forEach((p) => {
+      (p.temporada || []).forEach((s) => {
+        const cleaned = s.replace(/^temporada:\s*/i, "").trim();
+        const key = cleaned.toLowerCase();
+        if (key && !seasonMap.has(key)) {
+          seasonMap.set(key, toPascalCase(cleaned));
+        }
+      });
+    });
+    return Array.from(seasonMap.values());
+  }, [categoryProductsFormatted]);
+
+  // Apply search query, subtype/season, and price filters
   const filteredProducts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const isSeasonFilter = /^temporada:/i.test(selectedSubtype);
+    const targetSeason = isSeasonFilter
+      ? selectedSubtype.replace(/^temporada:\s*/i, "").trim().toLowerCase()
+      : "";
+
     return categoryProductsFormatted.filter((product) => {
-      const matchesSearch = product.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+      const matchesSearch =
+        !q ||
+        product.name.toLowerCase().includes(q) ||
+        product.temporada.some((s) => s.toLowerCase().includes(q)) ||
+        product.types.some((t) => t.toLowerCase().includes(q));
 
       const matchesPrice = product.price <= maxPrice;
 
-      const matchesSubtype =
-        selectedSubtype === "" ||
-        product.categoryPairs.some(
-          (pair) =>
-            pair.category.toLowerCase() === categoryName.toLowerCase() &&
-            pair.type.toLowerCase() === selectedSubtype.toLowerCase()
-        ) ||
-        product.types.some(
-          (t) => t.toLowerCase() === selectedSubtype.toLowerCase()
-        );
+      let matchesSubtype = true;
+      if (selectedSubtype !== "") {
+        if (isSeasonFilter) {
+          matchesSubtype = product.temporada.some(
+            (s) =>
+              s.replace(/^temporada:\s*/i, "").trim().toLowerCase() ===
+              targetSeason
+          );
+        } else {
+          matchesSubtype =
+            product.categoryPairs.some(
+              (pair) =>
+                pair.category.toLowerCase() === categoryName.toLowerCase() &&
+                pair.type.toLowerCase() === selectedSubtype.toLowerCase()
+            ) ||
+            product.types.some(
+              (t) => t.toLowerCase() === selectedSubtype.toLowerCase()
+            ) ||
+            product.temporada.some(
+              (s) =>
+                s.replace(/^temporada:\s*/i, "").trim().toLowerCase() ===
+                selectedSubtype.toLowerCase()
+            );
+        }
+      }
 
       return matchesSearch && matchesPrice && matchesSubtype;
     });
   }, [categoryProductsFormatted, searchQuery, selectedSubtype, maxPrice, categoryName]);
 
-  // Group filtered products by sub-type sections
+  // Group filtered products by sub-type or season sections
   const sectionsToRender = useMemo(() => {
     if (selectedSubtype !== "") {
+      const isSeasonFilter = /^temporada:/i.test(selectedSubtype);
+      if (isSeasonFilter) {
+        const seasonLabel = selectedSubtype.replace(/^temporada:\s*/i, "").trim();
+        if (filteredProducts.length === 0) return [];
+        return [
+          {
+            title: `Temporada: ${seasonLabel}`,
+            products: filteredProducts,
+          },
+        ];
+      }
+
       // Single sub-type section
       const itemsInSubtype = filteredProducts.filter(
         (p) =>
@@ -141,6 +193,11 @@ export default function CategoryClientPage({
           ) ||
           p.types.some(
             (t) => t.toLowerCase() === selectedSubtype.toLowerCase()
+          ) ||
+          p.temporada.some(
+            (s) =>
+              s.replace(/^temporada:\s*/i, "").trim().toLowerCase() ===
+              selectedSubtype.toLowerCase()
           )
       );
       if (itemsInSubtype.length === 0) return [];
@@ -153,7 +210,7 @@ export default function CategoryClientPage({
     }
 
     // All sub-types sections under this category
-    return subtypes
+    const baseSections = subtypes
       .map((sub) => {
         const productsInSub = filteredProducts.filter(
           (p) =>
@@ -171,6 +228,8 @@ export default function CategoryClientPage({
         };
       })
       .filter((section) => section.products.length > 0);
+
+    return baseSections;
   }, [selectedSubtype, subtypes, filteredProducts, categoryName]);
 
   const handleClearFilters = () => {
@@ -194,11 +253,12 @@ export default function CategoryClientPage({
         onPrice={setMaxPrice}
         onClear={handleClearFilters}
         options={subtypeNames}
+        seasonOptions={availableSeasons}
         allLabel="Todos los Tipos"
         maxPriceLimit={10000}
       />
 
-      <div className="mx-auto max-w-[1536px] px-6 lg:px-12">
+      <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-12">
         {/* Page Header - Catálogo {categoryName} */}
         <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div>
@@ -223,6 +283,7 @@ export default function CategoryClientPage({
             onPrice={setMaxPrice}
             onClear={handleClearFilters}
             options={subtypeNames}
+            seasonOptions={availableSeasons}
             categoryLabel="Tipo / Subcategoría"
             allLabel="Todos los Tipos"
             maxPriceLimit={10000}
