@@ -97,6 +97,7 @@ export default function CategoryClientPage({
           name: p.title,
           price: priceNum,
           compareAtPrice: compareAtPriceNum,
+          discountPercent: p.discountPercent || null,
           currency: p.priceRange?.minVariantPrice?.currencyCode || "MXN",
           image:
             p.featuredImage?.url ||

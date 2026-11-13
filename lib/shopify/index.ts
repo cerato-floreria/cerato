@@ -8,6 +8,14 @@ import {
   SeasonalCollectionData,
 } from './types';
 import {
+  fetchShopifyAdminDiscounts,
+  resolveProductDiscount,
+} from './discounts';
+export {
+  fetchShopifyAdminDiscounts,
+  resolveProductDiscount,
+};
+import {
   getProductsQuery,
   getProductByHandleQuery,
   getCollectionsQuery,
@@ -350,20 +358,37 @@ export function toPascalCase(str: string): string {
  * Gets all products from Shopify or fallback mock catalog.
  */
 export async function getAllProducts(): Promise<ShopifyProduct[]> {
-  const response = await shopifyFetch<{
-    products: { edges: Array<{ node: ShopifyProduct }> };
-  }>({
-    query: getProductsQuery,
-    tags: ['products'],
-  });
+  const [response, activeDiscounts] = await Promise.all([
+    shopifyFetch<{
+      products: { edges: Array<{ node: ShopifyProduct }> };
+    }>({
+      query: getProductsQuery,
+      tags: ['products'],
+    }),
+    fetchShopifyAdminDiscounts(),
+  ]);
 
   if (response?.body?.products?.edges) {
-    return response.body.products.edges.map((edge) =>
-      parseProductTags(edge.node),
-    );
+    return response.body.products.edges.map((edge: { node: ShopifyProduct }) => {
+      const parsed = parseProductTags(edge.node);
+      const discount = resolveProductDiscount(parsed, activeDiscounts);
+      return {
+        ...parsed,
+        discountPercent: discount.hasDiscount ? discount.discountPercent : null,
+        discountTitle: discount.hasDiscount ? discount.discountTitle : null,
+      };
+    });
   }
 
-  return getMockProducts().map(parseProductTags);
+  return getMockProducts().map((p) => {
+    const parsed = parseProductTags(p);
+    const discount = resolveProductDiscount(parsed, activeDiscounts);
+    return {
+      ...parsed,
+      discountPercent: discount.hasDiscount ? discount.discountPercent : null,
+      discountTitle: discount.hasDiscount ? discount.discountTitle : null,
+    };
+  });
 }
 
 /**
@@ -372,18 +397,34 @@ export async function getAllProducts(): Promise<ShopifyProduct[]> {
 export async function getProductByHandle(
   handle: string,
 ): Promise<ShopifyProduct | null> {
-  const response = await shopifyFetch<{ product: ShopifyProduct }>({
-    query: getProductByHandleQuery,
-    variables: { handle },
-    tags: ['products'],
-  });
+  const [response, activeDiscounts] = await Promise.all([
+    shopifyFetch<{ product: ShopifyProduct }>({
+      query: getProductByHandleQuery,
+      variables: { handle },
+      tags: ['products'],
+    }),
+    fetchShopifyAdminDiscounts(),
+  ]);
 
   if (response?.body?.product) {
-    return parseProductTags(response.body.product);
+    const parsed = parseProductTags(response.body.product);
+    const discount = resolveProductDiscount(parsed, activeDiscounts);
+    return {
+      ...parsed,
+      discountPercent: discount.hasDiscount ? discount.discountPercent : null,
+      discountTitle: discount.hasDiscount ? discount.discountTitle : null,
+    };
   }
 
   const mock = getMockProducts().find((p) => p.handle === handle);
-  return mock ? parseProductTags(mock) : null;
+  if (!mock) return null;
+  const parsed = parseProductTags(mock);
+  const discount = resolveProductDiscount(parsed, activeDiscounts);
+  return {
+    ...parsed,
+    discountPercent: discount.hasDiscount ? discount.discountPercent : null,
+    discountTitle: discount.hasDiscount ? discount.discountTitle : null,
+  };
 }
 
 /**
@@ -391,25 +432,28 @@ export async function getProductByHandle(
  * Returns null if no active seasonal collection is found or if it has no products.
  */
 export async function getSeasonalCollection(): Promise<SeasonalCollectionData | null> {
-  const response = await shopifyFetch<{
-    collections: {
-      edges: Array<{
-        node: {
-          id: string;
-          handle: string;
-          title: string;
-          description: string;
-          descriptionHtml?: string;
-          products: {
-            edges: Array<{ node: ShopifyProduct }>;
+  const [response, activeDiscounts] = await Promise.all([
+    shopifyFetch<{
+      collections: {
+        edges: Array<{
+          node: {
+            id: string;
+            handle: string;
+            title: string;
+            description: string;
+            descriptionHtml?: string;
+            products: {
+              edges: Array<{ node: ShopifyProduct }>;
+            };
           };
-        };
-      }>;
-    };
-  }>({
-    query: getCollectionsQuery,
-    tags: ['collections'],
-  });
+        }>;
+      };
+    }>({
+      query: getCollectionsQuery,
+      tags: ['collections'],
+    }),
+    fetchShopifyAdminDiscounts(),
+  ]);
 
   if (response?.body?.collections?.edges) {
     const collections = response.body.collections.edges.map(
@@ -419,9 +463,15 @@ export async function getSeasonalCollection(): Promise<SeasonalCollectionData | 
 
     if (seasonal) {
       const seasonName = seasonal.title.replace(/^temporada:\s*/i, '').trim();
-      const products = seasonal.products.edges.map((edge) =>
-        parseProductTags(edge.node),
-      );
+      const products = seasonal.products.edges.map((edge) => {
+        const parsed = parseProductTags(edge.node);
+        const discount = resolveProductDiscount(parsed, activeDiscounts);
+        return {
+          ...parsed,
+          discountPercent: discount.hasDiscount ? discount.discountPercent : null,
+          discountTitle: discount.hasDiscount ? discount.discountTitle : null,
+        };
+      });
 
       if (products.length > 0) {
         return {

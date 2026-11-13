@@ -106,6 +106,8 @@ export default async function ProductHandlePage({ params, searchParams }: PagePr
     compareAtPrice: product.compareAtPriceRange?.minVariantPrice?.amount
       ? parseFloat(product.compareAtPriceRange.minVariantPrice.amount)
       : null,
+    discountPercent: product.discountPercent ?? null,
+    discountTitle: product.discountTitle ?? null,
     currency: product.priceRange?.minVariantPrice?.currencyCode || "MXN",
     category: matchedCategory,
     categories: product.categories || [],

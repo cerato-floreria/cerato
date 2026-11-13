@@ -9,6 +9,7 @@ import { useCart } from '@/context/CartContext';
 import SoldOutBadge from './SoldOutBadge';
 import SeasonalBadge from './SeasonalBadge';
 import FeaturedBadge from './FeaturedBadge';
+import DiscountBadge from './DiscountBadge';
 
 interface SeasonalSectionProps {
   collection: SeasonalCollectionData | null;
@@ -87,7 +88,13 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
             const compareAtAmount = product.compareAtPriceRange?.minVariantPrice?.amount
               ? parseFloat(product.compareAtPriceRange.minVariantPrice.amount)
               : 0;
-            const hasDiscount = compareAtAmount > priceAmount;
+            const hasCompareAt = compareAtAmount > priceAmount;
+            const discountPercent =
+              typeof product.discountPercent === 'number' && product.discountPercent > 0
+                ? product.discountPercent
+                : 0;
+
+            const hasActiveDiscount = discountPercent > 0;
 
             const price = product.priceRange?.minVariantPrice?.amount
               ? `$${priceAmount.toLocaleString('es-MX', {
@@ -96,7 +103,7 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
                 })} ${product.priceRange.minVariantPrice.currencyCode || 'MXN'}`
               : '$0.00 MXN';
 
-            const compareAtPrice = hasDiscount
+            const compareAtPrice = hasCompareAt
               ? `$${compareAtAmount.toLocaleString('es-MX', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
@@ -114,12 +121,12 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
             return (
               <div
                 key={product.id}
-                className="group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-primary/10 shadow-lg hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-1.5"
+                className="group relative flex flex-col rounded-2xl bg-white border border-primary/10 shadow-lg hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-1.5"
               >
                 {/* Product Image Container */}
                 <Link
                   href={`/producto/${product.handle}`}
-                  className="relative aspect-square w-full overflow-hidden bg-cream block cursor-pointer"
+                  className="relative aspect-square w-full overflow-hidden rounded-t-2xl bg-cream block cursor-pointer"
                 >
                   <Image
                     src={imageUrl}
@@ -135,6 +142,13 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
                     {!product.availableForSale && <SoldOutBadge />}
                   </div>
                 </Link>
+
+                {/* Floating Protruding Glowing Discount Badge - sobresale de la tarjeta y visible aunque esté agotado */}
+                {hasActiveDiscount && (
+                  <div className="pointer-events-none absolute -top-2.5 -right-1.5 sm:-top-3 sm:-right-2 z-20 transition-transform duration-300 group-hover:scale-110 drop-shadow-md">
+                    <DiscountBadge discountPercent={discountPercent} size="default" />
+                  </div>
+                )}
 
                 {/* Product Info */}
                 <div className="flex flex-1 flex-col p-3.5 sm:p-6 justify-between gap-3 sm:gap-4">

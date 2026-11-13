@@ -9,6 +9,7 @@ import { toPascalCase, slugifyCategory } from '@/lib/shopify';
 import SoldOutBadge from './SoldOutBadge';
 import SeasonalBadge from './SeasonalBadge';
 import FeaturedBadge from './FeaturedBadge';
+import DiscountBadge from './DiscountBadge';
 
 export interface ProductVariantItem {
   id: string;
@@ -28,6 +29,8 @@ interface ProductDetailProps {
     name: string;
     price: number | string;
     compareAtPrice?: number | string | null;
+    discountPercent?: number | null;
+    discountTitle?: string | null;
     currency: string;
     category: string;
     categories?: string[];
@@ -86,12 +89,27 @@ const ProductDetailContent: React.FC<ProductDetailProps> = ({ product }) => {
     return null;
   }, [currentCompareAtPrice]);
 
-  const hasDiscount = useMemo(() => {
-    return Boolean(
-      numericCompareAt &&
-      numericCompareAt > numericPrice
-    );
-  }, [numericCompareAt, numericPrice]);
+  const discountPercent = useMemo(() => {
+    // Only from active store discount
+    if (typeof product.discountPercent === 'number' && product.discountPercent > 0) {
+      return product.discountPercent;
+    }
+    return 0;
+  }, [product.discountPercent]);
+
+  const hasDiscount = discountPercent > 0;
+
+  const displayOriginalPrice = useMemo(() => {
+    // Active variant compareAtPrice takes priority
+    if (activeVariant?.compareAtPrice && activeVariant.compareAtPrice > activeVariant.price) {
+      return activeVariant.compareAtPrice;
+    }
+    // Fallback to product compareAtPrice
+    if (numericCompareAt && numericCompareAt > numericPrice) {
+      return numericCompareAt;
+    }
+    return null;
+  }, [activeVariant, numericCompareAt, numericPrice]);
 
   const categoryDisplay = useMemo(() => {
     const raw = product.category || product.tag || 'Arte Floral Cerato';
@@ -368,6 +386,9 @@ const ProductDetailContent: React.FC<ProductDetailProps> = ({ product }) => {
                   <SeasonalBadge seasonName={activeSeasonName} size="lg" />
                 )}
                 {product.isFeatured && <FeaturedBadge size="lg" />}
+                {hasDiscount && discountPercent > 0 && (
+                  <DiscountBadge discountPercent={discountPercent} size="lg" />
+                )}
               </div>
 
               {/* Title - PascalCase */}
@@ -376,10 +397,10 @@ const ProductDetailContent: React.FC<ProductDetailProps> = ({ product }) => {
               </h1>
 
               {/* Price */}
-              <div className="font-display mb-6 flex flex-wrap items-baseline gap-2.5 sm:gap-3 lg:mb-8">
-                {hasDiscount && numericCompareAt && (
+              <div className="font-display mb-6 flex flex-wrap items-center gap-2.5 sm:gap-3 lg:mb-8">
+                {displayOriginalPrice && (
                   <span className="text-xl sm:text-2xl font-normal text-charcoal/40 line-through decoration-charcoal/30">
-                    ${numericCompareAt.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                    ${displayOriginalPrice.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </span>
                 )}
                 <span className="text-2xl font-semibold text-primary sm:text-3xl lg:text-4xl">
@@ -390,9 +411,12 @@ const ProductDetailContent: React.FC<ProductDetailProps> = ({ product }) => {
                 <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-gray-400">
                   {currentCurrency}
                 </span>
-                {hasDiscount && numericCompareAt && (
-                  <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-accent-gold/15 px-2.5 py-0.5 text-[11px] font-bold text-accent-gold border border-accent-gold/30">
-                    Ahorras ${(numericCompareAt - numericPrice).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                {hasDiscount && (
+                  <DiscountBadge discountPercent={discountPercent} size="default" />
+                )}
+                {displayOriginalPrice && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-accent-gold/15 px-2.5 py-0.5 text-[11px] font-bold text-accent-gold border border-accent-gold/30">
+                    Ahorras ${(displayOriginalPrice - numericPrice).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                   </span>
                 )}
               </div>
@@ -454,6 +478,17 @@ const ProductDetailContent: React.FC<ProductDetailProps> = ({ product }) => {
                                 }`}
                               >
                                 ${v.price.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                              </span>
+                            )}
+                            {typeof v.compareAtPrice === 'number' && v.compareAtPrice > v.price && (
+                              <span
+                                className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-full ${
+                                  isSelected
+                                    ? 'bg-amber-300 text-primary shadow-xs'
+                                    : 'bg-accent-gold/20 text-accent-gold border border-accent-gold/30'
+                                }`}
+                              >
+                                -{Math.round(((v.compareAtPrice - v.price) / v.compareAtPrice) * 100)}%
                               </span>
                             )}
                           </div>
