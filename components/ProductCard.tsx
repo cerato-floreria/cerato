@@ -13,6 +13,7 @@ interface ProductCardProps {
   handle?: string;
   name: string;
   price: number;
+  compareAtPrice?: number | null;
   currency?: string;
   image: string;
   availableForSale?: boolean;
@@ -26,6 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   handle,
   name,
   price,
+  compareAtPrice,
   image,
   availableForSale = true,
   categorySlug,
@@ -34,6 +36,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const targetSlug = handle || id;
   const displayName = useMemo(() => toPascalCase(name), [name]);
+  const hasDiscount = Boolean(compareAtPrice && compareAtPrice > price);
   const [isHovered, setIsHovered] = useState(false);
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [marqueeDistance, setMarqueeDistance] = useState(0);
@@ -100,10 +103,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
       />
 
       {/* Top Badges Container - Stacked vertically one below the previous */}
-      {(seasonName || !availableForSale) && (
+      {(seasonName || !availableForSale || hasDiscount) && (
         <div className="pointer-events-none absolute inset-x-2 top-2 sm:inset-x-3.5 sm:top-3.5 z-10 flex flex-col items-start gap-1 sm:gap-1.5">
           {seasonName && <SeasonalBadge seasonName={seasonName} />}
           {!availableForSale && <SoldOutBadge />}
+          {availableForSale && hasDiscount && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent-gold/90 backdrop-blur-md px-2 py-0.5 text-[7.5px] sm:text-[9px] font-bold tracking-wider text-white uppercase shadow-md border border-white/20 shrink-0">
+              Oferta
+            </span>
+          )}
         </div>
       )}
 
@@ -143,7 +151,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           {/* Price Component - Fixed & Never Crowded */}
-          <div className="shrink-0 sm:text-right whitespace-nowrap sm:pl-1">
+          <div className="shrink-0 sm:text-right whitespace-nowrap sm:pl-1 flex sm:flex-col sm:items-end items-baseline gap-1.5 sm:gap-0">
+            {hasDiscount && compareAtPrice && (
+              <span className="text-[10px] sm:text-xs font-normal text-white/60 line-through decoration-white/40 tracking-tight">
+                $
+                {compareAtPrice.toLocaleString('es-MX', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+            )}
             <span className="text-xs sm:text-[15px] font-bold text-accent-gold drop-shadow-md">
               $
               {price.toLocaleString('es-MX', {

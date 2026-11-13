@@ -2,6 +2,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  compareAtPrice?: number;
   currency: string;
   category: string;
   tag?: string;
@@ -16,6 +17,7 @@ export const allProducts: Product[] = [
     id: "cerato-floral-final",
     name: "Cerato Floral Final",
     price: 145000,
+    compareAtPrice: 175000,
     currency: "COP",
     category: "Arreglos",
     tag: "Edición Limitada",
@@ -33,6 +35,7 @@ export const allProducts: Product[] = [
     id: "10-gerberas",
     name: "10 gerberas",
     price: 45000,
+    compareAtPrice: 55000,
     currency: "COP",
     category: "Ramos y Atados",
     description: "Una explosión de alegría en colores vibrantes.",

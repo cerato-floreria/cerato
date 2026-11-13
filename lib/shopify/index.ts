@@ -704,6 +704,10 @@ export function getMockProducts(): ShopifyProduct[] {
         minVariantPrice: { amount: '1450.00', currencyCode: 'MXN' },
         maxVariantPrice: { amount: '1450.00', currencyCode: 'MXN' },
       },
+      compareAtPriceRange: {
+        minVariantPrice: { amount: '1750.00', currencyCode: 'MXN' },
+        maxVariantPrice: { amount: '1750.00', currencyCode: 'MXN' },
+      },
       featuredImage: {
         url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCcnF6uyQgzUeAHwhwX2ui_xzBSjzE2N59vxsYy8IlkSlqo-QgEquo4-0DfhPrMAcfeW9Opxe9BjUvj1SXzab7pBvgNkslJ_9PTAZDyJRL928MA1jjzQWo2nwM9rGyxS6HqYHgcn1pHhXRCmyAFirLMO0xEoYv-OLt6xaePIqDXrCFtLk6Ep8BaaW11Qw6FlBASZK18rEvVg4W9RRAMfZMxhAzQQhBcxDagHqOZQw19zeU1ACRAzqUcpaImD7bL46kg1HAN6fX8ow',
         altText: 'Cerato Floral Final',
@@ -726,6 +730,7 @@ export function getMockProducts(): ShopifyProduct[] {
               title: 'Default',
               availableForSale: true,
               price: { amount: '1450.00', currencyCode: 'MXN' },
+              compareAtPrice: { amount: '1750.00', currencyCode: 'MXN' },
             },
           },
         ],
@@ -749,6 +754,10 @@ export function getMockProducts(): ShopifyProduct[] {
         minVariantPrice: { amount: '450.00', currencyCode: 'MXN' },
         maxVariantPrice: { amount: '450.00', currencyCode: 'MXN' },
       },
+      compareAtPriceRange: {
+        minVariantPrice: { amount: '550.00', currencyCode: 'MXN' },
+        maxVariantPrice: { amount: '550.00', currencyCode: 'MXN' },
+      },
       featuredImage: {
         url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBv_3_bmSdtd0GnSh5EHK0u0_H56GG3Kf_w-IDOHKIyW-PPwNs_tZR-Rs7AndhnNT7ubLRmz8qDyrlrrfnj-EH2def2GiQ1GRGxUojM7JR3zdP78DT7vnUixzilHMco80LOsqm2fXJPnZjKI5eLlSl7Pbu-uPVTSPvlj_5VfgN1PyYQnSJYTZniJczRyBXhjFV64tzWezEJMtRKx8f_4xWsGtXDnzwh78Lfyc61A-AVBsf0NAx763M53ybxtEfrVUPPt9vK3AjLQw',
         altText: '10 Gerberas Multicolor',
@@ -771,6 +780,7 @@ export function getMockProducts(): ShopifyProduct[] {
               title: 'Default',
               availableForSale: true,
               price: { amount: '450.00', currencyCode: 'MXN' },
+              compareAtPrice: { amount: '550.00', currencyCode: 'MXN' },
             },
           },
         ],

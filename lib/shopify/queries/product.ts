@@ -17,6 +17,16 @@ export const productFragment = `
         currencyCode
       }
     }
+    compareAtPriceRange {
+      minVariantPrice {
+        amount
+        currencyCode
+      }
+      maxVariantPrice {
+        amount
+        currencyCode
+      }
+    }
     featuredImage {
       url
       altText
@@ -40,6 +50,10 @@ export const productFragment = `
           title
           availableForSale
           price {
+            amount
+            currencyCode
+          }
+          compareAtPrice {
             amount
             currencyCode
           }

@@ -87,11 +87,16 @@ export default function CategoryClientPage({
           ? parseFloat(p.priceRange.minVariantPrice.amount)
           : 0;
 
+        const compareAtPriceNum = p.compareAtPriceRange?.minVariantPrice?.amount
+          ? parseFloat(p.compareAtPriceRange.minVariantPrice.amount)
+          : null;
+
         return {
           id: p.id,
           handle: p.handle,
           name: p.title,
           price: priceNum,
+          compareAtPrice: compareAtPriceNum,
           currency: p.priceRange?.minVariantPrice?.currencyCode || "MXN",
           image:
             p.featuredImage?.url ||

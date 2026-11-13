@@ -88,9 +88,20 @@ const FeaturedProducts = () => {
 
               const variantId =
                 product.variants?.edges[0]?.node?.id || product.id;
+              const priceAmount = product.priceRange?.minVariantPrice?.amount
+                ? parseFloat(product.priceRange.minVariantPrice.amount)
+                : 0;
+              const compareAtAmount = product.compareAtPriceRange?.minVariantPrice?.amount
+                ? parseFloat(product.compareAtPriceRange.minVariantPrice.amount)
+                : 0;
+              const hasDiscount = compareAtAmount > priceAmount;
+
               const price = product.priceRange?.minVariantPrice?.amount
-                ? `$${parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)} ${product.priceRange.minVariantPrice.currencyCode}`
+                ? `$${priceAmount.toFixed(2)} ${product.priceRange.minVariantPrice.currencyCode}`
                 : '$0.00 MXN';
+              const compareAtPrice = hasDiscount
+                ? `$${compareAtAmount.toFixed(2)}`
+                : null;
               const imageUrl =
                 product.featuredImage?.url ||
                 'https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=400';
@@ -173,9 +184,16 @@ const FeaturedProducts = () => {
                     <h4 className="font-display text-lg font-medium tracking-tight text-primary md:text-xl text-center">
                       {product.title}
                     </h4>
-                    <p className="text-lg font-bold text-accent-gold md:text-xl">
-                      {price}
-                    </p>
+                    <div className="flex items-baseline justify-center gap-2">
+                      {compareAtPrice && (
+                        <span className="text-sm md:text-base font-normal text-charcoal/40 line-through">
+                          {compareAtPrice}
+                        </span>
+                      )}
+                      <p className="text-lg font-bold text-accent-gold md:text-xl">
+                        {price}
+                      </p>
+                    </div>
                     {isActive && (
                       <button
                         onClick={() =>

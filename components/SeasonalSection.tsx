@@ -81,14 +81,27 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
               product.featuredImage?.url ||
               product.images?.edges?.[0]?.node?.url ||
               'https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=600';
+            const priceAmount = product.priceRange?.minVariantPrice?.amount
+              ? parseFloat(product.priceRange.minVariantPrice.amount)
+              : 0;
+            const compareAtAmount = product.compareAtPriceRange?.minVariantPrice?.amount
+              ? parseFloat(product.compareAtPriceRange.minVariantPrice.amount)
+              : 0;
+            const hasDiscount = compareAtAmount > priceAmount;
+
             const price = product.priceRange?.minVariantPrice?.amount
-              ? `$${parseFloat(
-                  product.priceRange.minVariantPrice.amount,
-                ).toLocaleString('es-MX', {
+              ? `$${priceAmount.toLocaleString('es-MX', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })} ${product.priceRange.minVariantPrice.currencyCode || 'MXN'}`
               : '$0.00 MXN';
+
+            const compareAtPrice = hasDiscount
+              ? `$${compareAtAmount.toLocaleString('es-MX', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`
+              : null;
 
             const productSubtitle = product.types?.[0]
               ? toPascalCase(product.types[0])
@@ -141,9 +154,16 @@ const SeasonalSection: React.FC<SeasonalSectionProps> = ({ collection }) => {
                     >
                       {toPascalCase(product.title)}
                     </Link>
-                    <p className="text-xs sm:text-base font-bold text-accent-gold mt-0.5 sm:mt-1">
-                      {price}
-                    </p>
+                    <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
+                      {compareAtPrice && (
+                        <span className="text-[11px] sm:text-xs font-normal text-charcoal/40 line-through">
+                          {compareAtPrice}
+                        </span>
+                      )}
+                      <p className="text-xs sm:text-base font-bold text-accent-gold">
+                        {price}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Actions */}
