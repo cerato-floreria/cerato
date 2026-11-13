@@ -27,6 +27,12 @@ export interface ShopifyProduct {
     minVariantPrice: MoneyV2;
     maxVariantPrice: MoneyV2;
   };
+  compareAtPriceRange?: {
+    minVariantPrice: MoneyV2;
+    maxVariantPrice: MoneyV2;
+  } | null;
+  discountPercent?: number | null;
+  discountTitle?: string | null;
   featuredImage?: ShopifyImage | null;
   images: {
     edges: Array<{
@@ -40,6 +46,7 @@ export interface ShopifyProduct {
         title: string;
         availableForSale: boolean;
         price: MoneyV2;
+        compareAtPrice?: MoneyV2 | null;
         image?: ShopifyImage | null;
       };
     }>;
@@ -47,6 +54,7 @@ export interface ShopifyProduct {
   collections?: {
     edges: Array<{
       node: {
+        id?: string;
         title: string;
       };
     }>;

@@ -87,6 +87,9 @@ export default async function ProductHandlePage({ params, searchParams }: PagePr
     id: e.node.id,
     title: toPascalCase(e.node.title),
     price: e.node.price?.amount ? parseFloat(e.node.price.amount) : 0,
+    compareAtPrice: e.node.compareAtPrice?.amount
+      ? parseFloat(e.node.compareAtPrice.amount)
+      : null,
     currency: e.node.price?.currencyCode || "MXN",
     availableForSale: e.node.availableForSale ?? true,
     image: e.node.image?.url || null
@@ -100,6 +103,11 @@ export default async function ProductHandlePage({ params, searchParams }: PagePr
     price: product.priceRange?.minVariantPrice?.amount
       ? parseFloat(product.priceRange.minVariantPrice.amount)
       : 0,
+    compareAtPrice: product.compareAtPriceRange?.minVariantPrice?.amount
+      ? parseFloat(product.compareAtPriceRange.minVariantPrice.amount)
+      : null,
+    discountPercent: product.discountPercent ?? null,
+    discountTitle: product.discountTitle ?? null,
     currency: product.priceRange?.minVariantPrice?.currencyCode || "MXN",
     category: matchedCategory,
     categories: product.categories || [],

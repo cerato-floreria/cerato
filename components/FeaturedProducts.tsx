@@ -10,6 +10,7 @@ import { useCart } from '@/context/CartContext';
 import SoldOutBadge from './SoldOutBadge';
 import SeasonalBadge from './SeasonalBadge';
 import FeaturedBadge from './FeaturedBadge';
+import DiscountBadge from './DiscountBadge';
 
 const FeaturedProducts = () => {
   const [featured, setFeatured] = useState<ShopifyProduct[]>([]);
@@ -88,9 +89,26 @@ const FeaturedProducts = () => {
 
               const variantId =
                 product.variants?.edges[0]?.node?.id || product.id;
+              const priceAmount = product.priceRange?.minVariantPrice?.amount
+                ? parseFloat(product.priceRange.minVariantPrice.amount)
+                : 0;
+              const compareAtAmount = product.compareAtPriceRange?.minVariantPrice?.amount
+                ? parseFloat(product.compareAtPriceRange.minVariantPrice.amount)
+                : 0;
+              const hasCompareAt = compareAtAmount > priceAmount;
+              const discountPercent =
+                typeof product.discountPercent === 'number' && product.discountPercent > 0
+                  ? product.discountPercent
+                  : 0;
+
+              const hasActiveDiscount = discountPercent > 0;
+
               const price = product.priceRange?.minVariantPrice?.amount
-                ? `$${parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)} ${product.priceRange.minVariantPrice.currencyCode}`
+                ? `$${priceAmount.toFixed(2)} ${product.priceRange.minVariantPrice.currencyCode}`
                 : '$0.00 MXN';
+              const compareAtPrice = hasCompareAt
+                ? `$${compareAtAmount.toFixed(2)}`
+                : null;
               const imageUrl =
                 product.featuredImage?.url ||
                 'https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=400';
@@ -113,55 +131,65 @@ const FeaturedProducts = () => {
                     width: '320px',
                   }}
                 >
-                  {isActive ? (
-                    <Link
-                      href={`/producto/${product.handle}`}
-                      className="group/img relative mb-8 block w-full aspect-square overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-700 md:mb-10 border border-accent-gold/40 cursor-pointer"
-                      title={`Ver detalles de ${product.title}`}
-                    >
-                      <Image
-                        src={imageUrl}
-                        alt={product.title}
-                        fill
-                        priority={isActive}
-                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover/img:scale-105"
-                        sizes="320px"
-                      />
+                  {/* Card Container with Protruding Discount Badge */}
+                  <div className="relative mb-8 block w-full aspect-square md:mb-10">
+                    {isActive ? (
+                      <Link
+                        href={`/producto/${product.handle}`}
+                        className="group/img relative block w-full h-full overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-700 border border-accent-gold/40 cursor-pointer"
+                        title={`Ver detalles de ${product.title}`}
+                      >
+                        <Image
+                          src={imageUrl}
+                          alt={product.title}
+                          fill
+                          priority={isActive}
+                          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover/img:scale-105"
+                          sizes="320px"
+                        />
 
-                      {/* Top Badges Container - Stacked vertically one below the previous */}
-                      <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-10 flex flex-col items-start gap-1.5">
-                        {seasonName && (
-                          <SeasonalBadge seasonName={seasonName} />
-                        )}
-                        <FeaturedBadge />
-                        {product.availableForSale === false && <SoldOutBadge />}
-                      </div>
-                    </Link>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setCurrentIndex(index)}
-                      aria-label={`Seleccionar ${product.title}`}
-                      className="relative mb-8 w-full aspect-square overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-700 md:mb-10 cursor-pointer block text-left"
-                    >
-                      <Image
-                        src={imageUrl}
-                        alt={product.title}
-                        fill
-                        className="h-full w-full object-cover"
-                        sizes="320px"
-                      />
+                        {/* Top Badges Container - Stacked vertically one below the previous */}
+                        <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-10 flex flex-col items-start gap-1.5">
+                          {seasonName && (
+                            <SeasonalBadge seasonName={seasonName} />
+                          )}
+                          <FeaturedBadge />
+                          {product.availableForSale === false && <SoldOutBadge />}
+                        </div>
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setCurrentIndex(index)}
+                        aria-label={`Seleccionar ${product.title}`}
+                        className="relative block w-full h-full overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-700 cursor-pointer text-left"
+                      >
+                        <Image
+                          src={imageUrl}
+                          alt={product.title}
+                          fill
+                          className="h-full w-full object-cover"
+                          sizes="320px"
+                        />
 
-                      {/* Top Badges Container for inactive item - Stacked vertically */}
-                      <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-10 flex flex-col items-start gap-1.5">
-                        {seasonName && (
-                          <SeasonalBadge seasonName={seasonName} />
-                        )}
-                        <FeaturedBadge />
-                        {product.availableForSale === false && <SoldOutBadge />}
+                        {/* Top Badges Container for inactive item - Stacked vertically */}
+                        <div className="pointer-events-none absolute inset-x-3.5 top-3.5 z-10 flex flex-col items-start gap-1.5">
+                          {seasonName && (
+                            <SeasonalBadge seasonName={seasonName} />
+                          )}
+                          <FeaturedBadge />
+                          {product.availableForSale === false && <SoldOutBadge />}
+                        </div>
+                      </button>
+                    )}
+
+                    {/* Protruding Glowing Discount Badge - sobresale de la tarjeta */}
+                    {hasActiveDiscount && (
+                      <div className="pointer-events-none absolute -top-2.5 -right-1.5 sm:-top-3 sm:-right-2 z-30 transition-transform duration-300 drop-shadow-md">
+                        <DiscountBadge discountPercent={discountPercent} size="default" />
                       </div>
-                    </button>
-                  )}
+                    )}
+                  </div>
 
                   <div
                     className={`flex flex-col items-center gap-2 transition-all duration-700 md:gap-4 ${
@@ -173,9 +201,19 @@ const FeaturedProducts = () => {
                     <h4 className="font-display text-lg font-medium tracking-tight text-primary md:text-xl text-center">
                       {product.title}
                     </h4>
-                    <p className="text-lg font-bold text-accent-gold md:text-xl">
-                      {price}
-                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      {compareAtPrice && (
+                        <span className="text-sm md:text-base font-normal text-charcoal/40 line-through">
+                          {compareAtPrice}
+                        </span>
+                      )}
+                      <p className="text-lg font-bold text-accent-gold md:text-xl">
+                        {price}
+                      </p>
+                      {hasActiveDiscount && (
+                        <DiscountBadge discountPercent={discountPercent} size="sm" />
+                      )}
+                    </div>
                     {isActive && (
                       <button
                         onClick={() =>

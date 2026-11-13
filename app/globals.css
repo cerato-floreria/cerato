@@ -304,3 +304,33 @@ html.cerato-loader-done #cerato-initial-loader {
 html.cerato-loading body {
   overflow: hidden !important;
 }
+
+/* Luxury Discount Badge Glowing & Shimmer Animations */
+@keyframes discount-badge-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5), 0 3px 12px rgba(45, 27, 46, 0.35);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.85), 0 0 32px rgba(212, 175, 55, 0.45), 0 4px 16px rgba(45, 27, 46, 0.45);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes discount-shimmer-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+  30%, 100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+
+.animate-discount-glow {
+  animation: discount-badge-glow 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform, box-shadow;
+}
+
+.animate-discount-shimmer {
+  animation: discount-shimmer-sweep 2.8s ease-in-out infinite;
+}

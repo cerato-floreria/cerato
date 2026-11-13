@@ -9,6 +9,8 @@ interface Product {
   handle?: string;
   name: string;
   price: number;
+  compareAtPrice?: number | null;
+  discountPercent?: number | null;
   currency?: string;
   image: string;
   availableForSale?: boolean;
@@ -54,6 +56,8 @@ const ProductSection: React.FC<ProductSectionProps> = ({ title, products, catego
             image={product.image}
             name={product.name}
             price={product.price}
+            compareAtPrice={product.compareAtPrice}
+            discountPercent={product.discountPercent}
             currency={product.currency}
             availableForSale={product.availableForSale}
             categorySlug={categorySlug}
