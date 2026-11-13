@@ -44,6 +44,13 @@ export interface ShopifyProduct {
       };
     }>;
   };
+  collections?: {
+    edges: Array<{
+      node: {
+        title: string;
+      };
+    }>;
+  };
   // Parsed metadata fields from tags
   categories?: string[];
   types?: string[];
@@ -65,15 +72,32 @@ export interface ShopifyCollection {
   };
 }
 
+export interface SeasonalCollectionData {
+  id: string;
+  handle: string;
+  title: string;
+  seasonName: string;
+  description?: string;
+  descriptionHtml?: string;
+  products: ShopifyProduct[];
+}
+
+export interface Attribute {
+  key: string;
+  value: string;
+}
+
 export interface CartItem {
   id: string;
   quantity: number;
+  attributes?: Attribute[];
   cost: {
     totalAmount: MoneyV2;
   };
   merchandise: {
     id: string;
     title: string;
+    price?: MoneyV2;
     image?: ShopifyImage | null;
     product: ShopifyProduct;
   };
@@ -82,6 +106,8 @@ export interface CartItem {
 export interface Cart {
   id: string;
   checkoutUrl: string;
+  note?: string | null;
+  attributes?: Attribute[];
   cost: {
     subtotalAmount: MoneyV2;
     totalAmount: MoneyV2;

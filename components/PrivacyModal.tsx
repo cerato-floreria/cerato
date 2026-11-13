@@ -56,7 +56,7 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) => {
         <div className="flex-1 overflow-y-auto custom-scrollbar px-8 py-10 bg-wave-pattern">
           <div className="prose prose-sm max-w-none text-primary/70 font-sans leading-relaxed">
             <p className="mb-6">
-              En cumplimiento con la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (en lo sucesivo la "Ley")</strong>, Cerato Arte Floral, con domicilio para oír y recibir notificaciones en la Ciudad de México, hace de su conocimiento el presente Aviso de Privacidad.
+              En cumplimiento con la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares (en lo sucesivo la &ldquo;Ley&rdquo;)</strong>, Cerato Arte Floral, con domicilio para oír y recibir notificaciones en la Ciudad de México, hace de su conocimiento el presente Aviso de Privacidad.
             </p>
 
             <h3 className="text-lg font-display font-medium text-primary mb-3 mt-8">1. Datos Personales Recabados</h3>

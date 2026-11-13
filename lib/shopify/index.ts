@@ -5,12 +5,19 @@ import {
   CategorySubItem,
   TaxonomyData,
   CategoryTypePair,
+  SeasonalCollectionData,
 } from './types';
-import { getProductsQuery, getProductByHandleQuery } from './queries/product';
+import {
+  getProductsQuery,
+  getProductByHandleQuery,
+  getCollectionsQuery,
+} from './queries/product';
 import {
   createCartMutation,
   addToCartMutation,
   updateCartItemMutation,
+  updateCartAttributesMutation,
+  updateCartNoteMutation,
   removeFromCartMutation,
   getCartQuery,
 } from './queries/cart';
@@ -22,12 +29,14 @@ export async function shopifyFetch<T>({
   query,
   variables = {},
   tags = [],
-  cache = 'force-cache',
+  cache,
+  revalidate = 60,
 }: {
   query: string;
-  variables?: Record<string, any>;
+  variables?: Record<string, unknown>;
   tags?: string[];
   cache?: RequestCache;
+  revalidate?: number;
 }): Promise<{ status: number; body: T } | never> {
   const domain =
     process.env.SHOPIFY_STORE_DOMAIN || 'cerato-arte-floral.myshopify.com';
@@ -39,8 +48,13 @@ export async function shopifyFetch<T>({
     !storefrontAccessToken || storefrontAccessToken.includes('placeholder');
 
   if (isInvalidToken) {
-    return { status: 401, body: null as any };
+    return { status: 401, body: null as unknown as T };
   }
+
+  const isDev = process.env.NODE_ENV === 'development';
+  const effectiveCache: RequestCache =
+    cache ?? (isDev ? 'no-store' : 'force-cache');
+  const nextOptions = isDev ? { tags, revalidate: 0 } : { tags, revalidate };
 
   let attempt = 0;
   const maxAttempts = 3;
@@ -54,8 +68,8 @@ export async function shopifyFetch<T>({
           'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
         },
         body: JSON.stringify({ query, variables }),
-        cache,
-        next: { tags },
+        cache: effectiveCache,
+        next: nextOptions,
       });
 
       if (result.status === 429) {
@@ -76,18 +90,24 @@ export async function shopifyFetch<T>({
         status: result.status,
         body: body.data,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      if (
+        (error as { digest?: string })?.digest === 'DYNAMIC_SERVER_USAGE' ||
+        (error as Error)?.message?.includes('Dynamic server usage')
+      ) {
+        throw error;
+      }
       attempt++;
       if (attempt >= maxAttempts) {
         console.error('Shopify fetch failed after max retries:', error);
-        return { status: 500, body: null as any };
+        return { status: 500, body: null as unknown as T };
       }
       const waitMs = Math.pow(2, attempt) * 500;
       await new Promise((res) => setTimeout(res, waitMs));
     }
   }
 
-  return { status: 500, body: null as any };
+  return { status: 500, body: null as unknown as T };
 }
 
 /**
@@ -115,11 +135,23 @@ export function parseProductTags(product: ShopifyProduct): ShopifyProduct {
       type2 = trimmed.replace(/^type2:/i, '').trim();
     } else if (/^temporada:/i.test(trimmed)) {
       const val = trimmed.replace(/^temporada:/i, '').trim();
-      if (val && !temporada.includes(val)) temporada.push(val);
-    } else if (
-      trimmed.toLowerCase() === 'productos destacados' ||
-      trimmed.toLowerCase() === 'destacado'
-    ) {
+      if (val && !temporada.some((t) => t.toLowerCase() === val.toLowerCase())) {
+        temporada.push(val);
+      }
+    } else if (/^(productos?\s+)?destacados?(\s+cerato)?$/i.test(trimmed)) {
+      isFeatured = true;
+    }
+  });
+
+  // Also detect seasonal and featured collections assigned in Shopify
+  (product.collections?.edges || []).forEach((edge) => {
+    const colTitle = edge?.node?.title?.trim() || '';
+    if (/^temporada:\s*/i.test(colTitle)) {
+      const val = colTitle.replace(/^temporada:\s*/i, '').trim();
+      if (val && !temporada.some((t) => t.toLowerCase() === val.toLowerCase())) {
+        temporada.push(val);
+      }
+    } else if (/^(productos?\s+)?destacados?(\s+cerato)?$/i.test(colTitle)) {
       isFeatured = true;
     }
   });
@@ -127,6 +159,14 @@ export function parseProductTags(product: ShopifyProduct): ShopifyProduct {
   const categoryPairs: CategoryTypePair[] = [];
   const categories: string[] = [];
   const types: string[] = [];
+
+  // Fallback: if a product belongs to a seasonal collection but has no cat: tag, include it under FLORES Y PLANTAS
+  if (!cat1 && !cat2 && temporada.length > 0) {
+    cat1 = 'FLORES Y PLANTAS';
+    if (!type1) {
+      type1 = `Temporada ${toPascalCase(temporada[0])}`;
+    }
+  }
 
   // Pair 1: cat: linked with type:
   if (cat1) {
@@ -167,17 +207,26 @@ export function buildTaxonomy(products: ShopifyProduct[]): TaxonomyData {
     string,
     {
       canonicalName: string;
-      typeMap: Map<string, { canonicalName: string; products: ShopifyProduct[] }>;
+      typeMap: Map<
+        string,
+        { canonicalName: string; products: ShopifyProduct[] }
+      >;
     }
   >();
 
   const temporadaMap = new Map<string, ShopifyProduct[]>();
   const featuredList: ShopifyProduct[] = [];
 
-  const getCanonicalName = (existing: string | undefined, incoming: string): string => {
+  const getCanonicalName = (
+    existing: string | undefined,
+    incoming: string,
+  ): string => {
     if (!existing) return incoming;
     // Prefer uppercase or title case formatting over all lowercase
-    if (incoming === incoming.toUpperCase() && existing !== existing.toUpperCase()) {
+    if (
+      incoming === incoming.toUpperCase() &&
+      existing !== existing.toUpperCase()
+    ) {
       return incoming;
     }
     return existing;
@@ -210,7 +259,10 @@ export function buildTaxonomy(products: ShopifyProduct[]): TaxonomyData {
       }
 
       const catEntry = categoryMap.get(catKey)!;
-      catEntry.canonicalName = getCanonicalName(catEntry.canonicalName, category.trim());
+      catEntry.canonicalName = getCanonicalName(
+        catEntry.canonicalName,
+        category.trim(),
+      );
 
       if (!catEntry.typeMap.has(typeKey)) {
         catEntry.typeMap.set(typeKey, {
@@ -220,7 +272,10 @@ export function buildTaxonomy(products: ShopifyProduct[]): TaxonomyData {
       }
 
       const typeEntry = catEntry.typeMap.get(typeKey)!;
-      typeEntry.canonicalName = getCanonicalName(typeEntry.canonicalName, type.trim());
+      typeEntry.canonicalName = getCanonicalName(
+        typeEntry.canonicalName,
+        type.trim(),
+      );
 
       if (!typeEntry.products.some((p) => p.id === product.id)) {
         typeEntry.products.push(product);
@@ -279,9 +334,14 @@ export function toPascalCase(str: string): string {
     .split(/([\s-_/()]+)/)
     .map((word) => {
       if (!word) return '';
-      if (word === 'xl') return 'XL';
-      if (word === 'xxl') return 'XXL';
-      return word.charAt(0).toUpperCase() + word.slice(1);
+      const clean = word.replace(/\P{L}/gu, '');
+      if (clean === 'xl') return word.replace(/xl/i, 'XL');
+      if (clean === 'xxl') return word.replace(/xxl/i, 'XXL');
+      // Capitalize the first Unicode letter, preserving leading punctuation like ¿, ¡, (, ", etc.
+      return word.replace(
+        /^(\P{L}*)(\p{L})/u,
+        (_, p1, p2) => p1 + p2.toUpperCase(),
+      );
     })
     .join('');
 }
@@ -295,7 +355,6 @@ export async function getAllProducts(): Promise<ShopifyProduct[]> {
   }>({
     query: getProductsQuery,
     tags: ['products'],
-    cache: 'force-cache',
   });
 
   if (response?.body?.products?.edges) {
@@ -317,7 +376,6 @@ export async function getProductByHandle(
     query: getProductByHandleQuery,
     variables: { handle },
     tags: ['products'],
-    cache: 'force-cache',
   });
 
   if (response?.body?.product) {
@@ -329,13 +387,88 @@ export async function getProductByHandle(
 }
 
 /**
+ * Fetches the active seasonal collection whose title begins with "temporada: {nombre}".
+ * Returns null if no active seasonal collection is found or if it has no products.
+ */
+export async function getSeasonalCollection(): Promise<SeasonalCollectionData | null> {
+  const response = await shopifyFetch<{
+    collections: {
+      edges: Array<{
+        node: {
+          id: string;
+          handle: string;
+          title: string;
+          description: string;
+          descriptionHtml?: string;
+          products: {
+            edges: Array<{ node: ShopifyProduct }>;
+          };
+        };
+      }>;
+    };
+  }>({
+    query: getCollectionsQuery,
+    tags: ['collections'],
+  });
+
+  if (response?.body?.collections?.edges) {
+    const collections = response.body.collections.edges.map(
+      (edge) => edge.node,
+    );
+    const seasonal = collections.find((c) => /^temporada:\s*/i.test(c.title));
+
+    if (seasonal) {
+      const seasonName = seasonal.title.replace(/^temporada:\s*/i, '').trim();
+      const products = seasonal.products.edges.map((edge) =>
+        parseProductTags(edge.node),
+      );
+
+      if (products.length > 0) {
+        return {
+          id: seasonal.id,
+          handle: seasonal.handle,
+          title: seasonal.title,
+          seasonName,
+          description: seasonal.description || '',
+          descriptionHtml: seasonal.descriptionHtml || '',
+          products,
+        };
+      }
+    }
+  }
+
+  // Fallback: check taxonomy or mock products
+  const all = await getAllProducts();
+  const taxonomy = buildTaxonomy(all);
+  const seasonEntries = Array.from(taxonomy.temporadaCollections.entries());
+  if (seasonEntries.length > 0) {
+    const [seasonKey, seasonProducts] = seasonEntries[0];
+    if (seasonProducts.length > 0) {
+      return {
+        id: `temporada-${seasonKey}`,
+        handle: `temporada-${seasonKey}`,
+        title: `temporada: ${seasonKey}`,
+        seasonName: seasonKey,
+        description: '',
+        products: seasonProducts,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Cart API helpers
  */
 export async function createCart(
   lines: Array<{ merchandiseId: string; quantity: number }> = [],
 ): Promise<Cart | null> {
   const res = await shopifyFetch<{
-    cartCreate: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+    cartCreate: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
   }>({
     query: createCartMutation,
     variables: lines.length > 0 ? { lineItems: lines } : {},
@@ -343,7 +476,10 @@ export async function createCart(
   });
 
   if (res?.body?.cartCreate?.userErrors?.length) {
-    console.error('Shopify createCart userErrors:', res.body.cartCreate.userErrors);
+    console.error(
+      'Shopify createCart userErrors:',
+      res.body.cartCreate.userErrors,
+    );
   }
 
   return res?.body?.cartCreate?.cart || null;
@@ -355,7 +491,10 @@ export async function addToCart(
   quantity: number = 1,
 ): Promise<Cart | null> {
   const res = await shopifyFetch<{
-    cartLinesAdd: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+    cartLinesAdd: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
   }>({
     query: addToCartMutation,
     variables: {
@@ -366,7 +505,10 @@ export async function addToCart(
   });
 
   if (res?.body?.cartLinesAdd?.userErrors?.length) {
-    console.error('Shopify addToCart userErrors:', res.body.cartLinesAdd.userErrors);
+    console.error(
+      'Shopify addToCart userErrors:',
+      res.body.cartLinesAdd.userErrors,
+    );
     return null;
   }
 
@@ -379,7 +521,10 @@ export async function updateCartQuantity(
   quantity: number,
 ): Promise<Cart | null> {
   const res = await shopifyFetch<{
-    cartLinesUpdate: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+    cartLinesUpdate: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
   }>({
     query: updateCartItemMutation,
     variables: {
@@ -390,7 +535,10 @@ export async function updateCartQuantity(
   });
 
   if (res?.body?.cartLinesUpdate?.userErrors?.length) {
-    console.error('Shopify updateCartQuantity userErrors:', res.body.cartLinesUpdate.userErrors);
+    console.error(
+      'Shopify updateCartQuantity userErrors:',
+      res.body.cartLinesUpdate.userErrors,
+    );
     return null;
   }
 
@@ -402,7 +550,10 @@ export async function removeFromCart(
   lineIds: string[],
 ): Promise<Cart | null> {
   const res = await shopifyFetch<{
-    cartLinesRemove: { cart: Cart; userErrors: Array<{ field: string[]; message: string }> };
+    cartLinesRemove: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
   }>({
     query: removeFromCartMutation,
     variables: { cartId, lineIds },
@@ -410,7 +561,10 @@ export async function removeFromCart(
   });
 
   if (res?.body?.cartLinesRemove?.userErrors?.length) {
-    console.error('Shopify removeFromCart userErrors:', res.body.cartLinesRemove.userErrors);
+    console.error(
+      'Shopify removeFromCart userErrors:',
+      res.body.cartLinesRemove.userErrors,
+    );
     return null;
   }
 
@@ -424,6 +578,102 @@ export async function getCart(cartId: string): Promise<Cart | null> {
     cache: 'no-store',
   });
   return res?.body?.cart || null;
+}
+
+export async function updateCartAttributes(
+  cartId: string,
+  attributes: Array<{ key: string; value: string }>,
+  note?: string,
+): Promise<{
+  cart: Cart | null;
+  userErrors?: Array<{ field: string[]; message: string }>;
+}> {
+  let updatedCart: Cart | null = null;
+  const allUserErrors: Array<{ field: string[]; message: string }> = [];
+
+  if (attributes && attributes.length > 0) {
+    const res = await shopifyFetch<{
+      cartAttributesUpdate: {
+        cart: Cart;
+        userErrors: Array<{ field: string[]; message: string }>;
+      };
+    }>({
+      query: updateCartAttributesMutation,
+      variables: { cartId, attributes },
+      cache: 'no-store',
+    });
+
+    if (res?.body?.cartAttributesUpdate?.userErrors?.length) {
+      console.error(
+        'Shopify updateCartAttributes userErrors:',
+        res.body.cartAttributesUpdate.userErrors,
+      );
+      allUserErrors.push(...res.body.cartAttributesUpdate.userErrors);
+    } else if (res?.body?.cartAttributesUpdate?.cart) {
+      updatedCart = res.body.cartAttributesUpdate.cart;
+    }
+  }
+
+  if (typeof note === 'string') {
+    const res = await shopifyFetch<{
+      cartNoteUpdate: {
+        cart: Cart;
+        userErrors: Array<{ field: string[]; message: string }>;
+      };
+    }>({
+      query: updateCartNoteMutation,
+      variables: { cartId, note },
+      cache: 'no-store',
+    });
+
+    if (res?.body?.cartNoteUpdate?.userErrors?.length) {
+      console.error(
+        'Shopify updateCartNote userErrors:',
+        res.body.cartNoteUpdate.userErrors,
+      );
+      allUserErrors.push(...res.body.cartNoteUpdate.userErrors);
+    } else if (res?.body?.cartNoteUpdate?.cart) {
+      updatedCart = res.body.cartNoteUpdate.cart;
+    }
+  }
+
+  return { cart: updatedCart, userErrors: allUserErrors };
+}
+
+export async function updateCartLines(
+  cartId: string,
+  lines: Array<{
+    id: string;
+    quantity?: number;
+    attributes?: Array<{ key: string; value: string }>;
+  }>,
+): Promise<{
+  cart: Cart | null;
+  userErrors?: Array<{ field: string[]; message: string }>;
+}> {
+  const res = await shopifyFetch<{
+    cartLinesUpdate: {
+      cart: Cart;
+      userErrors: Array<{ field: string[]; message: string }>;
+    };
+  }>({
+    query: updateCartItemMutation,
+    variables: {
+      cartId,
+      lines,
+    },
+    cache: 'no-store',
+  });
+
+  if (res?.body?.cartLinesUpdate?.userErrors?.length) {
+    console.error(
+      'Shopify updateCartLines userErrors:',
+      res.body.cartLinesUpdate.userErrors,
+    );
+    return { cart: null, userErrors: res.body.cartLinesUpdate.userErrors };
+  }
+
+  return { cart: res?.body?.cartLinesUpdate?.cart || null, userErrors: [] };
 }
 
 /**
@@ -578,10 +828,7 @@ export function getMockProducts(): ShopifyProduct[] {
       description:
         'Una orquídea Phalaenopsis de doble tallo en un tono púrpura profundo y real.',
       availableForSale: true,
-      tags: [
-        'cat:FLORES Y PLANTAS',
-        'type:Flores e Individuales',
-      ],
+      tags: ['cat:FLORES Y PLANTAS', 'type:Flores e Individuales'],
       priceRange: {
         minVariantPrice: { amount: '950.00', currencyCode: 'MXN' },
         maxVariantPrice: { amount: '950.00', currencyCode: 'MXN' },

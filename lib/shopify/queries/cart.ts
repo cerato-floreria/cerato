@@ -3,6 +3,11 @@ export const cartFragment = `
     id
     checkoutUrl
     totalQuantity
+    note
+    attributes {
+      key
+      value
+    }
     cost {
       subtotalAmount {
         amount
@@ -22,6 +27,10 @@ export const cartFragment = `
         node {
           id
           quantity
+          attributes {
+            key
+            value
+          }
           cost {
             totalAmount {
               amount
@@ -90,6 +99,36 @@ export const addToCartMutation = `
 export const updateCartItemMutation = `
   mutation updateCartItem($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
     cartLinesUpdate(cartId: $cartId, lines: $lines) {
+      cart {
+        ...cartFields
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+  ${cartFragment}
+`;
+
+export const updateCartAttributesMutation = `
+  mutation updateCartAttributes($cartId: ID!, $attributes: [AttributeInput!]!) {
+    cartAttributesUpdate(cartId: $cartId, attributes: $attributes) {
+      cart {
+        ...cartFields
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+  ${cartFragment}
+`;
+
+export const updateCartNoteMutation = `
+  mutation updateCartNote($cartId: ID!, $note: String!) {
+    cartNoteUpdate(cartId: $cartId, note: $note) {
       cart {
         ...cartFields
       }

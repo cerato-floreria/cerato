@@ -2,8 +2,10 @@
 
 import React, { useEffect, useMemo } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { toPascalCase } from '@/lib/shopify';
+import { CartItem } from '@/lib/shopify/types';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -11,8 +13,14 @@ interface CartDrawerProps {
 }
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
-  const { cart, updateItemQuantity, removeItem, checkoutUrl, isLoading } =
-    useCart();
+  const {
+    cart,
+    updateItemQuantity,
+    removeItem,
+    isLoading,
+  } = useCart();
+
+  const router = useRouter();
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -31,11 +39,17 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   }, [isOpen, onClose]);
 
   // Extract lines supporting edges or direct nodes
-  const lineItems = useMemo(() => {
+  const lineItems = useMemo((): CartItem[] => {
     if (!cart?.lines) return [];
-    if (Array.isArray(cart.lines)) return cart.lines;
-    if (Array.isArray((cart.lines as any).nodes)) return (cart.lines as any).nodes;
-    if (Array.isArray(cart.lines.edges)) return cart.lines.edges.map((e: any) => e.node || e);
+    if (Array.isArray(cart.lines)) return cart.lines as CartItem[];
+    const linesObj = cart.lines as unknown as {
+      nodes?: CartItem[];
+      edges?: Array<{ node?: CartItem }>;
+    };
+    if (Array.isArray(linesObj.nodes)) return linesObj.nodes;
+    if (Array.isArray(linesObj.edges)) {
+      return linesObj.edges.map((e) => (e.node || e) as CartItem);
+    }
     return [];
   }, [cart]);
 
@@ -44,7 +58,10 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     if (typeof cart?.totalQuantity === 'number' && cart.totalQuantity > 0) {
       return cart.totalQuantity;
     }
-    return lineItems.reduce((acc: number, item: any) => acc + (item.quantity || 0), 0);
+    return lineItems.reduce(
+      (acc: number, item: CartItem) => acc + (item.quantity || 0),
+      0,
+    );
   }, [cart, lineItems]);
 
   // Calculate subtotal with fallbacks
@@ -57,10 +74,11 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       const parsed = parseFloat(cart.cost.totalAmount.amount);
       if (!isNaN(parsed) && parsed > 0) return parsed;
     }
-    return lineItems.reduce((acc: number, item: any) => {
+    return lineItems.reduce((acc: number, item: CartItem) => {
       const lineCost = item.cost?.totalAmount?.amount
         ? parseFloat(item.cost.totalAmount.amount)
-        : (parseFloat(item.merchandise?.price?.amount || '0') * (item.quantity || 1));
+        : parseFloat(item.merchandise?.price?.amount || '0') *
+          (item.quantity || 1);
       return acc + (isNaN(lineCost) ? 0 : lineCost);
     }, 0);
   }, [cart, lineItems]);
@@ -71,14 +89,9 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     lineItems[0]?.merchandise?.price?.currencyCode ||
     'MXN';
 
-  const handleCheckout = () => {
-    if (checkoutUrl) {
-      window.location.href = checkoutUrl;
-    } else {
-      alert(
-        'Su carrito está listo. Redirigiendo a la pantalla de pago seguro de Shopify...',
-      );
-    }
+  const handleProceedToShipping = () => {
+    onClose();
+    router.push('/envio');
   };
 
   return (
@@ -91,11 +104,15 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
             : 'opacity-0 invisible pointer-events-none'
         }`}
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Drawer */}
       <div
-        className={`fixed right-0 top-0 bottom-0 z-[130] w-full sm:w-[450px] lg:w-[33%] bg-white shadow-2xl transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) flex flex-col ${
+        role="dialog"
+        aria-modal="true"
+        aria-label="Carrito de compras"
+        className={`fixed right-0 top-0 bottom-0 z-[130] w-full sm:w-[460px] lg:w-[36%] bg-white shadow-2xl transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -111,13 +128,14 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={onClose}
+            aria-label="Cerrar carrito"
             className="text-white/80 hover:text-white transition-colors cursor-pointer p-2"
           >
             <span className="material-symbols-outlined text-3xl">close</span>
           </button>
         </div>
 
-        {/* Content with Wave Pattern */}
+        {/* Product Items List */}
         <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-6 bg-wave-pattern">
           <div className="flex flex-col gap-4">
             {lineItems.length === 0 ? (
@@ -130,34 +148,47 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                 </p>
               </div>
             ) : (
-              lineItems.map((item: any) => {
+              lineItems.map((item: CartItem) => {
                 const productTitle = toPascalCase(
                   item.merchandise?.product?.title ||
                     item.merchandise?.title ||
-                    'Producto Floral'
+                    'Producto Floral',
                 );
-                const variantTitle = toPascalCase(
+                const rawVariantTitle = (
                   item.merchandise?.title || ''
-                );
+                ).trim();
+                const isDefaultVariant =
+                  !rawVariantTitle ||
+                  rawVariantTitle.toLowerCase() === 'default title' ||
+                  rawVariantTitle.toLowerCase() === 'default';
+
+                const variantTitle = !isDefaultVariant
+                  ? toPascalCase(rawVariantTitle)
+                  : '';
                 const displayTitle =
-                  variantTitle && variantTitle !== productTitle
+                  variantTitle &&
+                  variantTitle.toLowerCase() !== productTitle.toLowerCase()
                     ? `${productTitle} – ${variantTitle}`
                     : productTitle;
                 const imageUrl =
                   item.merchandise?.image?.url ||
                   item.merchandise?.product?.featuredImage?.url ||
                   'https://images.unsplash.com/photo-1591886911223-3cd63f58296c?auto=format&fit=crop&q=80&w=200';
-                
-                const unitPrice = parseFloat(item.merchandise?.price?.amount || '0');
+
+                const unitPrice = parseFloat(
+                  item.merchandise?.price?.amount || '0',
+                );
                 const lineTotal = item.cost?.totalAmount?.amount
                   ? parseFloat(item.cost.totalAmount.amount)
-                  : (!isNaN(unitPrice) ? unitPrice * (item.quantity || 1) : 0);
+                  : !isNaN(unitPrice)
+                    ? unitPrice * (item.quantity || 1)
+                    : 0;
 
                 const itemCurrency =
                   item.cost?.totalAmount?.currencyCode ||
                   item.merchandise?.price?.currencyCode ||
                   currency;
-                
+
                 return (
                   <div
                     key={item.id}
@@ -187,6 +218,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                         <button
                           onClick={() => removeItem(item.id)}
                           disabled={isLoading}
+                          aria-label={`Eliminar ${displayTitle} del carrito`}
                           className="text-primary/30 hover:text-red-600 transition-colors p-1 -mr-1 -mt-1 cursor-pointer shrink-0 disabled:opacity-50"
                           title="Eliminar producto"
                         >
@@ -202,9 +234,13 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                         <div className="flex items-center border border-primary/15 rounded-lg bg-background-light shadow-xs overflow-hidden shrink-0">
                           <button
                             onClick={() =>
-                              updateItemQuantity(item.id, (item.quantity || 1) - 1)
+                              updateItemQuantity(
+                                item.id,
+                                (item.quantity || 1) - 1,
+                              )
                             }
                             disabled={isLoading}
+                            aria-label="Disminuir cantidad"
                             className="w-7 h-7 flex items-center justify-center text-primary/60 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-40 cursor-pointer font-bold text-sm"
                           >
                             -
@@ -214,9 +250,13 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                           </span>
                           <button
                             onClick={() =>
-                              updateItemQuantity(item.id, (item.quantity || 1) + 1)
+                              updateItemQuantity(
+                                item.id,
+                                (item.quantity || 1) + 1,
+                              )
                             }
                             disabled={isLoading}
+                            aria-label="Aumentar cantidad"
                             className="w-7 h-7 flex items-center justify-center text-primary/60 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-40 cursor-pointer font-bold text-sm"
                           >
                             +
@@ -226,7 +266,12 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                         {/* Line Total Price */}
                         <div className="text-right shrink-0">
                           <span className="font-display font-bold text-sm sm:text-[15px] text-primary block whitespace-nowrap">
-                            ${lineTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {itemCurrency}
+                            $
+                            {lineTotal.toLocaleString('es-MX', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}{' '}
+                            {itemCurrency}
                           </span>
                         </div>
                       </div>
@@ -242,15 +287,23 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
         <div className="bg-white border-t border-primary/10 px-6 sm:px-8 py-6 sm:py-7 flex flex-col gap-4 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] shrink-0">
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center text-[11px] font-sans font-bold uppercase tracking-widest text-primary/50">
-              <span>Subtotal ({totalQuantity} {totalQuantity === 1 ? 'artículo' : 'artículos'})</span>
+              <span>
+                Subtotal ({totalQuantity}{' '}
+                {totalQuantity === 1 ? 'artículo' : 'artículos'})
+              </span>
               <span className="text-primary/80 font-bold">
-                ${subtotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                $
+                {subtotal.toLocaleString('es-MX', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{' '}
+                {currency}
               </span>
             </div>
             <div className="flex justify-between items-center text-[11px] font-sans font-bold uppercase tracking-widest text-primary/50">
               <span>Envío Local (León, Gto.)</span>
               <span className="italic normal-case font-medium text-accent">
-                Calculado en checkout
+                Calculado en el siguiente paso
               </span>
             </div>
             <div className="flex justify-between items-center mt-3 pt-3 border-t border-primary/10">
@@ -258,16 +311,22 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                 Total
               </span>
               <span className="text-xl lg:text-2xl font-display font-bold text-primary">
-                ${subtotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                $
+                {subtotal.toLocaleString('es-MX', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{' '}
+                {currency}
               </span>
             </div>
           </div>
           <button
-            onClick={handleCheckout}
+            onClick={handleProceedToShipping}
             disabled={lineItems.length === 0 || isLoading}
-            className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-sans font-bold tracking-[0.25em] text-[11px] transition-all shadow-xl shadow-primary/20 active:scale-[0.98] uppercase mt-1 disabled:opacity-50 cursor-pointer"
+            className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-sans font-bold tracking-[0.25em] text-[11px] transition-all shadow-xl shadow-primary/20 active:scale-[0.98] uppercase mt-1 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
           >
-            {isLoading ? 'PROCESANDO...' : 'PAGAR AHORA'}
+            <span>CONTINUAR CON EL ENVÍO</span>
+            <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </button>
           <p className="text-center text-[9px] font-sans text-primary/40 uppercase tracking-[0.2em] mt-1">
             Procesamiento de pago seguro operado por Shopify

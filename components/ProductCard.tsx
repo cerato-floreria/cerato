@@ -4,6 +4,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { toPascalCase } from '@/lib/shopify';
+import SoldOutBadge from './SoldOutBadge';
+import SeasonalBadge from './SeasonalBadge';
+import FeaturedBadge from './FeaturedBadge';
 
 interface ProductCardProps {
   id: string;
@@ -12,6 +15,10 @@ interface ProductCardProps {
   price: number;
   currency?: string;
   image: string;
+  availableForSale?: boolean;
+  categorySlug?: string;
+  seasonName?: string;
+  isFeatured?: boolean;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -20,6 +27,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
   name,
   price,
   image,
+  availableForSale = true,
+  categorySlug,
+  seasonName,
+  isFeatured = false,
 }) => {
   const targetSlug = handle || id;
   const displayName = useMemo(() => toPascalCase(name), [name]);
@@ -51,9 +62,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   useEffect(() => {
-    checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    return () => window.removeEventListener('resize', checkOverflow);
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      checkOverflow();
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, [displayName]);
 
   const handleMouseEnter = () => {
@@ -65,9 +79,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
     setIsHovered(false);
   };
 
+  const productHref = categorySlug
+    ? `/producto/${targetSlug}?from=${encodeURIComponent(categorySlug)}`
+    : `/producto/${targetSlug}`;
+
   return (
     <Link
-      href={`/producto/${targetSlug}`}
+      href={productHref}
       className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-cream border border-primary/5 shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 active:scale-[0.98]"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -78,14 +96,27 @@ const ProductCard: React.FC<ProductCardProps> = ({
         alt={displayName}
         fill
         className="object-cover transition-transform duration-700 ease-out group-hover:scale-108"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        sizes="(max-width: 1024px) 50vw, 25vw"
       />
 
+      {/* Top Badges Container - Stacked vertically one below the previous */}
+      {(seasonName || !availableForSale) && (
+        <div className="pointer-events-none absolute inset-x-2 top-2 sm:inset-x-3.5 sm:top-3.5 z-10 flex flex-col items-start gap-1 sm:gap-1.5">
+          {seasonName && <SeasonalBadge seasonName={seasonName} />}
+          {!availableForSale && <SoldOutBadge />}
+        </div>
+      )}
+
       {/* Information Overlay */}
-      <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-5 pt-16 bg-gradient-to-t from-primary/95 via-primary/60 to-transparent transition-all duration-500">
+      <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end p-3 sm:p-5 pt-12 sm:pt-16 bg-gradient-to-t from-primary/95 via-primary/60 to-transparent transition-all duration-500">
+        {isFeatured && (
+          <div className="flex justify-end mb-1.5">
+            <FeaturedBadge size="sm" />
+          </div>
+        )}
         {/* Title and Price Row - Guaranteed No Overlap */}
-        <div className="flex items-center justify-between gap-3 w-full mb-3">
-          {/* Title Container with Ellipsis & Marquee Banner Effect */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-3 w-full mb-2 sm:mb-3">
+          {/* Title Container with Full Text on Mobile & Marquee Banner Effect on Desktop */}
           <div
             ref={containerRef}
             className="flex-1 min-w-0 overflow-hidden relative"
@@ -100,10 +131,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     } as React.CSSProperties)
                   : undefined
               }
-              className={`font-display text-sm sm:text-[15px] font-semibold text-white tracking-wide drop-shadow-md transition-all ${
+              className={`font-display text-xs sm:text-[15px] font-semibold leading-snug text-white tracking-wide drop-shadow-md transition-all ${
                 isHovered && isOverflowing
-                  ? 'whitespace-nowrap inline-block animate-marquee-banner'
-                  : 'truncate block w-full'
+                  ? 'whitespace-normal break-words sm:whitespace-nowrap sm:inline-block sm:animate-marquee-banner'
+                  : 'whitespace-normal break-words sm:truncate block w-full'
               }`}
               title={displayName}
             >
@@ -112,8 +143,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           {/* Price Component - Fixed & Never Crowded */}
-          <div className="shrink-0 text-right whitespace-nowrap pl-1">
-            <span className="text-sm sm:text-[15px] font-bold text-accent-gold drop-shadow-md">
+          <div className="shrink-0 sm:text-right whitespace-nowrap sm:pl-1">
+            <span className="text-xs sm:text-[15px] font-bold text-accent-gold drop-shadow-md">
               $
               {price.toLocaleString('es-MX', {
                 minimumFractionDigits: 2,
@@ -124,9 +155,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* View Product CTA Button */}
-        <button className="w-full rounded-lg bg-white/95 py-2.5 text-[9px] font-bold uppercase tracking-[0.25em] text-primary transition-all group-hover:bg-accent-gold group-hover:text-white shadow-md backdrop-blur-sm cursor-pointer">
+        <span className="w-full block text-center rounded-lg bg-white/95 py-2 sm:py-2.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.18em] sm:tracking-[0.25em] text-primary transition-all group-hover:bg-accent-gold group-hover:text-white shadow-md backdrop-blur-sm">
           Ver Detalles
-        </button>
+        </span>
       </div>
     </Link>
   );

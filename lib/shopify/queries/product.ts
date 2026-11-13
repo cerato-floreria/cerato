@@ -52,6 +52,13 @@ export const productFragment = `
         }
       }
     }
+    collections(first: 10) {
+      edges {
+        node {
+          title
+        }
+      }
+    }
   }
 `;
 
@@ -72,6 +79,36 @@ export const getProductByHandleQuery = `
   query getProductByHandle($handle: String!) {
     product(handle: $handle) {
       ...productFields
+    }
+  }
+  ${productFragment}
+`;
+
+export const getCollectionsQuery = `
+  query getCollections($first: Int = 50) {
+    collections(first: $first) {
+      edges {
+        node {
+          id
+          handle
+          title
+          description
+          descriptionHtml
+          image {
+            url
+            altText
+            width
+            height
+          }
+          products(first: 50) {
+            edges {
+              node {
+                ...productFields
+              }
+            }
+          }
+        }
+      }
     }
   }
   ${productFragment}
