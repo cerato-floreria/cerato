@@ -172,25 +172,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem("cerato_delivery_date");
       localStorage.removeItem("cerato_delivery_slot");
       const savedDel = localStorage.getItem("cerato_delivery_notes");
-      if (savedDel) setDeliveryNotesState(savedDel);
       const savedCardFrom = localStorage.getItem("cerato_card_from");
-      if (savedCardFrom) setCardFromState(savedCardFrom);
       const savedCardTo = localStorage.getItem("cerato_card_to");
-      if (savedCardTo) setCardToState(savedCardTo);
       const savedCard = localStorage.getItem("cerato_card_message");
-      if (savedCard) setCardMessageState(savedCard);
       const savedCardSig = localStorage.getItem("cerato_card_signature");
-      if (savedCardSig) setCardSignatureState(savedCardSig);
       const savedShip = localStorage.getItem("cerato_shipping_address");
-      if (savedShip) setShippingAddressState(savedShip);
       const savedNeigh = localStorage.getItem("cerato_neighborhood");
-      if (savedNeigh) setNeighborhoodState(savedNeigh);
       const savedCp = localStorage.getItem("cerato_postal_code");
-      if (savedCp) setPostalCodeState(savedCp);
       const savedSendPhone = localStorage.getItem("cerato_sender_phone");
-      if (savedSendPhone) setSenderPhoneState(savedSendPhone);
       const savedRecPhone = localStorage.getItem("cerato_recipient_phone");
-      if (savedRecPhone) setRecipientPhoneState(savedRecPhone);
+
+      queueMicrotask(() => {
+        if (savedDel) setDeliveryNotesState(savedDel);
+        if (savedCardFrom) setCardFromState(savedCardFrom);
+        if (savedCardTo) setCardToState(savedCardTo);
+        if (savedCard) setCardMessageState(savedCard);
+        if (savedCardSig) setCardSignatureState(savedCardSig);
+        if (savedShip) setShippingAddressState(savedShip);
+        if (savedNeigh) setNeighborhoodState(savedNeigh);
+        if (savedCp) setPostalCodeState(savedCp);
+        if (savedSendPhone) setSenderPhoneState(savedSendPhone);
+        if (savedRecPhone) setRecipientPhoneState(savedRecPhone);
+      });
     } catch {}
 
     const cartId = localStorage.getItem("shopify_cart_id");

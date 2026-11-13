@@ -251,7 +251,7 @@ export default function ShippingForm() {
       }
 
       if (res.checkoutUrl) {
-        window.location.href = res.checkoutUrl;
+        window.location.assign(res.checkoutUrl);
       } else {
         setErrorMessage("El enlace de pago de Shopify no está disponible en este momento.");
         setIsSubmitting(false);

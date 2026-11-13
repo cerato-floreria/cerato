@@ -105,7 +105,9 @@ export default function InitialLoader() {
       if (alreadyShown || prefersReduced) {
         document.documentElement.classList.add('cerato-loader-done');
         document.documentElement.classList.remove('cerato-loading');
-        setPhase('done');
+        queueMicrotask(() => {
+          setPhase('done');
+        });
         return;
       }
 
@@ -142,7 +144,9 @@ export default function InitialLoader() {
         document.body.style.overflow = '';
       };
     } catch {
-      setPhase('done');
+      queueMicrotask(() => {
+        setPhase('done');
+      });
     }
   }, []);
 

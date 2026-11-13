@@ -36,7 +36,7 @@ export function sanitizeOrderText(
   if (typeof input !== "string") return "";
   const { trim = true } = options;
 
-  let sanitized = input
+  const sanitized = input
     // 1. Unicode normalization (canonical composition)
     .normalize("NFC")
     // 2. Remove null bytes and non-printable control characters (preserve \r, \n, \t)
