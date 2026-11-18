@@ -619,7 +619,7 @@ export default function ShippingForm() {
                       className="w-full bg-[#FAF9F7] border border-primary/15 rounded-xl p-4 text-sm text-primary placeholder:text-primary/35 focus:outline-none focus:border-primary focus:bg-white transition-all leading-relaxed resize-y shadow-xs"
                     />
                     <div className="flex justify-end items-center text-[10px] font-sans uppercase tracking-widest text-accent-gold font-bold mt-2">
-                      <span>EL MENSAJE SERÁ IMPRESO EN UNA TARJETA DE LUJO</span>
+                      <span>EL MENSAJE SERÁ IMPRESO EN UNA TARJETA</span>
                     </div>
                   </div>
 
